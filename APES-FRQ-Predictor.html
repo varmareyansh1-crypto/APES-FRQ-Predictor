@@ -1,0 +1,3109 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>APES FRQ Predictor</title>
+  <meta name="description" content="Predict likely APES unit-test FRQs from your teacher's past FRQs, with a study plan and sources.">
+<style>
+:root {
+  --bg: #f4f7f2;
+  --surface: #ffffff;
+  --text: #1d2a1f;
+  --muted: #5b6b5d;
+  --border: #d6e0d4;
+  --accent: #2f7d4a;
+  --accent-ink: #ffffff;
+  --accent-soft: #e3f1e6;
+  --must: #b4432b;
+  --should: #b7791f;
+  --review: #4a6fa5;
+  --shadow: 0 1px 2px rgba(0, 0, 0, .06), 0 4px 16px rgba(0, 0, 0, .04);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #121814;
+    --surface: #1a221c;
+    --text: #e4ece5;
+    --muted: #9fb0a2;
+    --border: #2c3a2f;
+    --accent: #5cb87a;
+    --accent-ink: #0d1a11;
+    --accent-soft: #213427;
+    --must: #e8806a;
+    --should: #e2b052;
+    --review: #86a8dc;
+    --shadow: none;
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme="dark"] {
+  --bg: #121814;
+  --surface: #1a221c;
+  --text: #e4ece5;
+  --muted: #9fb0a2;
+  --border: #2c3a2f;
+  --accent: #5cb87a;
+  --accent-ink: #0d1a11;
+  --accent-soft: #213427;
+  --must: #e8806a;
+  --should: #e2b052;
+  --review: #86a8dc;
+  --shadow: none;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 16px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+.wrap { max-width: 1000px; margin: 0 auto; padding: 0 16px; }
+
+.site-header { background: var(--accent); color: var(--accent-ink); padding: 20px 0 16px; margin-bottom: 20px; }
+.site-header h1 { margin: 0; font-size: 1.6rem; }
+.subtitle { margin: 2px 0 0; opacity: .85; }
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: var(--shadow);
+}
+.card h2 { margin: 0 0 14px; font-size: 1.2rem; }
+
+.controls { display: flex; flex-wrap: wrap; gap: 14px; margin-bottom: 12px; }
+.field { min-width: 0; max-width: 100%; display: flex; flex-direction: column; gap: 4px; font-weight: 600; font-size: .92rem; }
+.field.grow { flex: 1 1 260px; }
+.field input[type=range] { accent-color: var(--accent); }
+
+select, textarea, button, .button-like { font: inherit; color: inherit; }
+select {
+  padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface);
+  max-width: 100%;
+}
+.field.unit-field { flex: 1 1 320px; }
+#unit { width: 100%; }
+
+textarea {
+  width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px;
+  background: var(--bg); resize: vertical; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .9rem;
+}
+textarea:focus, select:focus, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+.hint { color: var(--muted); font-weight: 400; font-size: .85rem; margin: 4px 0 0; }
+
+.buttons { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+button, .button-like {
+  padding: 9px 14px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface);
+  cursor: pointer; font-weight: 600; font-size: .92rem;
+}
+button:hover, .button-like:hover { border-color: var(--accent); }
+button.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+button.ghost { background: transparent; }
+.status { min-height: 1.3em; color: var(--accent); font-size: .9rem; margin: 8px 0 0; }
+
+.results-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+.results-head h2 { margin: 0; }
+
+.summary { margin: 12px 0 16px; padding: 12px 14px; background: var(--accent-soft); border-radius: 8px; font-size: .95rem; }
+.summary p { margin: 4px 0; }
+
+.tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--border); overflow-x: auto; }
+.tabs button { border: none; border-bottom: 3px solid transparent; border-radius: 0; background: none; white-space: nowrap; color: var(--muted); }
+.tabs button[aria-selected=true] { color: var(--text); border-bottom-color: var(--accent); }
+.tab-panel { padding-top: 16px; }
+
+.frq { border: 1px solid var(--border); border-radius: 10px; padding: 16px; margin-bottom: 14px; }
+.frq.backup { opacity: .85; border-style: dashed; }
+.frq-head { display: flex; justify-content: space-between; gap: 10px; align-items: flex-start; flex-wrap: wrap; }
+.frq h3 { margin: 0; font-size: 1.05rem; }
+.frq .meta { color: var(--muted); font-size: .85rem; margin: 2px 0 0; }
+.frq .scenario { font-style: italic; margin: 12px 0 8px; }
+.frq ol { margin: 0; padding-left: 0; list-style: none; }
+.frq li { margin: 8px 0; display: flex; gap: 8px; }
+.frq li .letter { font-weight: 700; min-width: 1.8em; }
+.frq li .context { display: block; font-style: italic; color: var(--muted); font-size: .92rem; }
+.frq .why { margin-top: 10px; font-size: .85rem; color: var(--muted); }
+
+.pill {
+  display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: .8rem; font-weight: 700;
+  background: var(--accent-soft); color: var(--accent); white-space: nowrap;
+}
+.pill.must { background: color-mix(in srgb, var(--must) 15%, transparent); color: var(--must); }
+.pill.should { background: color-mix(in srgb, var(--should) 15%, transparent); color: var(--should); }
+.pill.review { background: color-mix(in srgb, var(--review) 15%, transparent); color: var(--review); }
+
+.bar { height: 8px; background: var(--border); border-radius: 999px; overflow: hidden; margin-top: 6px; }
+.bar > span { display: block; height: 100%; background: var(--accent); }
+
+.topic { border-bottom: 1px solid var(--border); padding: 12px 0; }
+.topic:last-child { border-bottom: none; }
+.topic-head { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; align-items: baseline; }
+.topic h4 { margin: 0; font-size: 1rem; }
+.topic ul { margin: 6px 0; padding-left: 20px; }
+.vocab { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.vocab span { font-size: .8rem; padding: 2px 8px; border: 1px solid var(--border); border-radius: 6px; }
+
+.grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+.box { border: 1px solid var(--border); border-radius: 10px; padding: 14px; }
+.box h3 { margin: 0 0 8px; font-size: 1rem; }
+.box ul, .box ol { margin: 0; padding-left: 20px; }
+.box li { margin: 4px 0; }
+
+.sources li { margin: 10px 0; }
+.sources a { color: var(--accent); font-weight: 600; word-break: break-word; }
+.sources .why-src { display: block; color: var(--muted); font-size: .88rem; }
+.link-row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 4px; }
+
+table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+th, td { text-align: left; padding: 8px; border-bottom: 1px solid var(--border); vertical-align: top; }
+.table-scroll { overflow-x: auto; }
+
+.disclaimer { color: var(--muted); font-size: .85rem; text-align: center; margin: 0 0 30px; }
+
+@media print {
+  .site-header, #setup-h, .card:first-of-type, .tabs, .results-head button, .disclaimer { display: none !important; }
+  .tab-panel[hidden] { display: block !important; }
+  body { background: #fff; color: #000; }
+  .card { border: none; box-shadow: none; }
+}
+
+</style>
+</head>
+<body>
+<header class="site-header">
+    <div class="wrap">
+      <h1>APES FRQ Predictor</h1>
+      <p class="subtitle">CAMS · AP Environmental Science · Mrs. Davis's unit tests</p>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="card" aria-labelledby="setup-h">
+      <h2 id="setup-h">1. Choose the unit and paste the FRQs</h2>
+
+      <div class="controls">
+        <label class="field unit-field">
+          <span>Unit</span>
+          <select id="unit"></select>
+        </label>
+        <label class="field">
+          <span>FRQs on the test</span>
+          <select id="numFRQs">
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3" selected>3</option>
+            <option value="4">4</option>
+            <option value="5">5</option>
+          </select>
+        </label>
+        <label class="field grow">
+          <span>Teacher style: <b id="reuseLabel">Mostly reuses topics</b></span>
+          <input type="range" id="reuse" min="0" max="100" value="60" aria-describedby="reuseHelp">
+          <small id="reuseHelp" class="hint">Left = rotates to new topics each test · Right = reuses the same topics/questions</small>
+        </label>
+      </div>
+
+      <label class="field" for="frqInput">
+        <span>Past FRQs from Mrs. Davis (any unit — paste as many as you have)</span>
+      </label>
+      <textarea id="frqInput" rows="12" spellcheck="true" placeholder="Paste FRQs here. Separate questions with a line like 'FRQ 1', 'Question 2', '1.' or '---'.
+
+FRQ 1
+A farmer applies nitrogen fertilizer to fields near a lake...
+(a) Describe the process of nitrification.
+(b) Explain how excess nitrate leads to eutrophication.
+---
+FRQ 2
+..."></textarea>
+      <p class="hint" id="inputStats">No FRQs yet — you can still predict from AP exam trends.</p>
+
+      <div class="buttons">
+        <button id="predictBtn" class="primary">Predict FRQs</button>
+        <button id="sampleBtn">Load example</button>
+        <button id="saveBtn" title="Save these FRQs in this browser for the selected unit">Save to my bank</button>
+        <button id="loadBtn" title="Load FRQs you saved for the selected unit">Load my bank</button>
+        <button id="exportBtn" title="Download every saved FRQ as a file">Export</button>
+        <label class="button-like" title="Load a file you exported earlier">Import<input type="file" id="importFile" accept=".json,.txt" hidden></label>
+        <button id="clearBtn" class="ghost">Clear</button>
+      </div>
+      <p class="status" id="status" role="status" aria-live="polite"></p>
+    </section>
+
+    <section id="results" class="card" hidden aria-labelledby="results-h">
+      <div class="results-head">
+        <h2 id="results-h">2. Prediction</h2>
+        <button id="printBtn" class="ghost">Print / save as PDF</button>
+      </div>
+      <div id="summary" class="summary"></div>
+
+      <div class="tabs" role="tablist">
+        <button role="tab" aria-selected="true" data-tab="predicted">Most likely FRQs</button>
+        <button role="tab" aria-selected="false" data-tab="study">What to study</button>
+        <button role="tab" aria-selected="false" data-tab="sources">Sources</button>
+        <button role="tab" aria-selected="false" data-tab="analysis">Your FRQs analyzed</button>
+      </div>
+
+      <div class="tab-panel" id="tab-predicted" role="tabpanel"></div>
+      <div class="tab-panel" id="tab-study" role="tabpanel" hidden></div>
+      <div class="tab-panel" id="tab-sources" role="tabpanel" hidden></div>
+      <div class="tab-panel" id="tab-analysis" role="tabpanel" hidden></div>
+    </section>
+
+    <p class="disclaimer">
+      Predictions combine the FRQs you paste, AP exam topic frequencies, and the College Board CED.
+      They are educated estimates, not leaked questions — study the "Must know" list fully and you'll be ready either way.
+    </p>
+  </main>
+<script>
+/*
+ * APES knowledge base — Units 1-3.
+ * Topic numbering follows the College Board AP Environmental Science
+ * Course and Exam Description (CED). `w` is a 1-5 estimate of how often the
+ * topic shows up on AP/teacher FRQs (5 = shows up almost every year).
+ */
+(function (root) {
+  const units = [
+    {
+      id: 1,
+      name: "The Living World: Ecosystems",
+      examWeight: "6-8%",
+      bigIdea: "Energy flows and matter cycles through ecosystems.",
+      topics: [
+        {
+          id: "1.1", name: "Introduction to Ecosystems", w: 3,
+          kw: ["ecosystem", "predation", "predator", "prey", "mutualism", "commensalism", "parasitism", "symbiosis", "competition", "resource partitioning", "niche", "interspecific"],
+          concepts: [
+            "Species interactions: predation, parasitism, mutualism, commensalism, competition",
+            "Resource partitioning (temporal, spatial, morphological) reduces competition",
+            "Competitive exclusion: two species cannot occupy the exact same niche",
+            "Biotic vs. abiotic factors in an ecosystem"
+          ],
+          scenario: "Two species of warblers feed in the same spruce trees in a northern forest, but each feeds in a different part of the tree.",
+          parts: [
+            "Identify the type of species interaction described in the scenario.",
+            "Describe one form of resource partitioning and explain how it reduces competition between the two species.",
+            "Explain how a mutualistic relationship differs from a commensal relationship, using an example of each.",
+            "Predict what would happen to the prey population if the predator population were removed, and justify your prediction.",
+            "Propose one way to reduce competition between a native species and a newly introduced competitor, and explain how it would work."
+          ]
+        },
+        {
+          id: "1.2", name: "Terrestrial Biomes", w: 3,
+          kw: ["biome", "tundra", "taiga", "boreal", "desert", "grassland", "savanna", "tropical rainforest", "temperate deciduous", "chaparral", "shrubland", "permafrost", "climatograph"],
+          concepts: [
+            "Biomes are defined by average temperature and precipitation (read climatographs)",
+            "Tropical rainforest: high NPP, nutrient-poor soil; tundra: permafrost, low NPP",
+            "Plant/animal adaptations to each biome (e.g., succulents, deciduous leaves, fire-adapted grasses)",
+            "Biome shifts as climate changes (poleward / upslope movement)"
+          ],
+          scenario: "A climatograph shows a location with average monthly temperatures between 20 and 28 degrees C and annual precipitation of 250 cm.",
+          parts: [
+            "Identify the biome represented by the climatograph and justify your answer using the data.",
+            "Describe one adaptation of plants found in this biome.",
+            "Explain why soils in tropical rainforests are typically nutrient-poor despite high productivity.",
+            "Describe how climate change could cause the boundaries of a biome to shift.",
+            "Propose one strategy to protect a biome threatened by human development, and explain how it would preserve biodiversity."
+          ]
+        },
+        {
+          id: "1.3", name: "Aquatic Biomes", w: 2,
+          kw: ["aquatic", "estuary", "wetland", "coral reef", "intertidal", "salinity", "freshwater", "marine", "open ocean", "kelp", "salt marsh", "mangrove", "littoral", "photic"],
+          concepts: [
+            "Aquatic biomes are classified by salinity, depth, flow, temperature, and dissolved oxygen",
+            "Estuaries and wetlands are highly productive and provide nursery habitat",
+            "Coral reefs: mutualism between coral and zooxanthellae algae; high biodiversity",
+            "Wetlands filter pollutants and reduce flooding"
+          ],
+          scenario: "An estuary forms where a river meets the ocean along a developed coastline.",
+          parts: [
+            "Describe one abiotic characteristic that distinguishes an estuary from a freshwater lake.",
+            "Explain why estuaries are among the most productive ecosystems on Earth.",
+            "Identify one ecosystem service provided by wetlands.",
+            "Describe the mutualistic relationship between corals and zooxanthellae.",
+            "Propose one action to protect a coastal estuary from pollution, and explain how it would improve water quality."
+          ]
+        },
+        {
+          id: "1.4", name: "The Carbon Cycle", w: 4,
+          kw: ["carbon cycle", "carbon sink", "carbon source", "photosynthesis", "cellular respiration", "decomposition", "sedimentation", "combustion", "carbon reservoir", "carbon dioxide", "co2", "carbon"],
+          concepts: [
+            "Processes: photosynthesis, respiration, decomposition, combustion, sedimentation, burial",
+            "Largest reservoir: sedimentary rock; ocean is a major sink",
+            "Fast vs. slow parts of the cycle; burning fossil fuels moves C from slow to fast",
+            "Deforestation removes a carbon sink and releases stored carbon"
+          ],
+          scenario: "Scientists are measuring how carbon moves between the atmosphere, forests, oceans, and fossil fuel reserves.",
+          parts: [
+            "Identify one natural process that removes carbon dioxide from the atmosphere.",
+            "Describe how the combustion of fossil fuels alters the carbon cycle.",
+            "Explain how deforestation affects the amount of carbon dioxide in the atmosphere.",
+            "Identify the largest reservoir of carbon on Earth and describe how carbon enters it.",
+            "Propose one solution to reduce the amount of carbon dioxide entering the atmosphere, and explain how it would work."
+          ]
+        },
+        {
+          id: "1.5", name: "The Nitrogen Cycle", w: 4,
+          kw: ["nitrogen cycle", "nitrogen fixation", "nitrification", "denitrification", "ammonification", "assimilation", "ammonia", "ammonium", "nitrate", "nitrite", "legume", "rhizobium", "nitrogen"],
+          concepts: [
+            "Fixation (N2 to NH3) by bacteria/lightning/Haber-Bosch; nitrification (NH4+ to NO2- to NO3-)",
+            "Assimilation by plants; ammonification by decomposers; denitrification returns N2",
+            "Atmosphere is the largest N reservoir but N2 is unusable by most organisms",
+            "Human impacts: synthetic fertilizer runoff causes eutrophication; NOx from combustion"
+          ],
+          scenario: "A farmer is deciding whether to plant soybeans or apply synthetic nitrogen fertilizer to a corn field.",
+          parts: [
+            "Describe the process of nitrogen fixation, including the organisms involved.",
+            "Explain why planting legumes can reduce the need for synthetic fertilizer.",
+            "Identify the step of the nitrogen cycle that returns nitrogen gas to the atmosphere.",
+            "Describe one environmental consequence of excess nitrogen fertilizer entering nearby waterways.",
+            "Propose one farming practice that reduces nitrogen runoff into waterways, and explain how it works."
+          ]
+        },
+        {
+          id: "1.6", name: "The Phosphorus Cycle", w: 3,
+          kw: ["phosphorus cycle", "phosphorus", "phosphate", "weathering", "limiting nutrient", "guano", "uplift"],
+          concepts: [
+            "No atmospheric component; major reservoir is rock and sediment",
+            "Weathering of rock releases phosphate slowly, so P is often a limiting nutrient",
+            "Human sources: fertilizer, detergents, animal waste — lead to eutrophication",
+            "Geologic uplift returns ocean sediments to land"
+          ],
+          scenario: "A lake that historically had clear water now experiences algal blooms each summer after a new subdivision was built nearby.",
+          parts: [
+            "Identify the major reservoir of phosphorus.",
+            "Explain why phosphorus is often a limiting nutrient in aquatic ecosystems.",
+            "Describe one human activity that adds phosphorus to aquatic ecosystems.",
+            "Explain why the phosphorus cycle is much slower than the carbon or nitrogen cycles.",
+            "Propose one solution to reduce phosphorus pollution in a lake, and explain how it would work."
+          ]
+        },
+        {
+          id: "1.7", name: "The Hydrologic (Water) Cycle", w: 3,
+          kw: ["water cycle", "hydrologic", "evaporation", "transpiration", "evapotranspiration", "condensation", "precipitation", "infiltration", "runoff", "groundwater", "aquifer"],
+          concepts: [
+            "Processes: evaporation, transpiration, condensation, precipitation, infiltration, runoff",
+            "Ocean is the largest reservoir; most freshwater is in ice caps and glaciers",
+            "Solar energy drives the water cycle",
+            "Impervious surfaces increase runoff and decrease infiltration/groundwater recharge"
+          ],
+          scenario: "A forested hillside is cleared and paved for a shopping center.",
+          parts: [
+            "Identify the process by which plants release water vapor into the atmosphere.",
+            "Explain how replacing forest with pavement affects infiltration and runoff.",
+            "Identify the primary source of energy that drives the hydrologic cycle.",
+            "Describe one way that groundwater is recharged.",
+            "Propose one method to increase groundwater recharge in an urban area, and explain how it would work."
+          ]
+        },
+        {
+          id: "1.8", name: "Primary Productivity", w: 3,
+          kw: ["primary productivity", "gross primary productivity", "net primary productivity", "gpp", "npp", "productivity", "photosynthetic", "biomass production"],
+          concepts: [
+            "NPP = GPP - respiration (R); NPP is energy available to consumers",
+            "Most productive: tropical rainforest, estuaries, wetlands, coral reefs; least: deserts, open ocean",
+            "Productivity limited by light, water, temperature, nutrients",
+            "Measuring productivity via light/dark bottle dissolved oxygen method"
+          ],
+          scenario: "Researchers measured gross primary productivity of 25,000 kcal/m2/yr and respiration of 13,000 kcal/m2/yr in a tropical forest plot.",
+          parts: [
+            "Calculate the net primary productivity of the forest plot. Show your work.",
+            "Explain why NPP is a better measure than GPP of the energy available to primary consumers.",
+            "Identify one ecosystem with low net primary productivity and explain why productivity is limited there.",
+            "Describe a method scientists could use to measure primary productivity in an aquatic ecosystem.",
+            "Propose one human action that could restore primary productivity in a degraded ecosystem, and explain how it would work."
+          ],
+          calc: "NPP = GPP - R"
+        },
+        {
+          id: "1.9", name: "Trophic Levels", w: 3,
+          kw: ["trophic level", "producer", "primary consumer", "secondary consumer", "tertiary consumer", "herbivore", "carnivore", "omnivore", "decomposer", "detritivore", "autotroph", "heterotroph"],
+          concepts: [
+            "Producers to primary, secondary, tertiary consumers; decomposers recycle nutrients",
+            "Autotrophs vs. heterotrophs",
+            "Decomposers/detritivores return nutrients to the soil",
+            "Top predators are most vulnerable to biomagnification"
+          ],
+          scenario: "In a grassland food web, grasses are eaten by grasshoppers and rabbits, which are eaten by snakes and hawks.",
+          parts: [
+            "Identify the trophic level of the snake in this food web.",
+            "Describe the role of decomposers in the grassland ecosystem.",
+            "Explain why there are fewer organisms at higher trophic levels.",
+            "Predict how a decline in the grasshopper population would affect another organism in the food web.",
+            "Propose one way to reduce human impacts on top predators in a food web, and explain how it would protect them."
+          ]
+        },
+        {
+          id: "1.10", name: "Energy Flow and the 10% Rule", w: 4,
+          kw: ["10% rule", "ten percent", "energy pyramid", "energy flow", "energy transfer", "kcal", "thermodynamics", "biomass pyramid", "trophic efficiency"],
+          concepts: [
+            "Only ~10% of energy transfers to the next trophic level; ~90% lost as heat (2nd law of thermodynamics)",
+            "Energy flows (one direction), matter cycles",
+            "Energy pyramids explain why food chains rarely exceed 4-5 levels",
+            "Eating lower on the food chain feeds more people per unit of land"
+          ],
+          scenario: "Producers in a lake ecosystem capture 50,000 kcal of energy per square meter per year.",
+          parts: [
+            "Calculate the amount of energy available to the tertiary consumers using the 10% rule. Show your work.",
+            "Explain why only about 10 percent of the energy is transferred from one trophic level to the next.",
+            "Explain why a vegetarian diet can feed more people per acre than a meat-based diet.",
+            "Identify the law of thermodynamics that explains the energy loss between trophic levels.",
+            "Propose one change to the human food supply that would use energy more efficiently, and explain your reasoning using the 10% rule."
+          ],
+          calc: "Energy at next level = energy x 0.10"
+        },
+        {
+          id: "1.11", name: "Food Chains and Food Webs", w: 3,
+          kw: ["food web", "food chain", "keystone", "trophic cascade", "interconnected"],
+          concepts: [
+            "Food webs show multiple interconnected feeding relationships",
+            "Removing a species can cause a trophic cascade (e.g., wolves in Yellowstone)",
+            "Keystone species have disproportionate effects on their ecosystem",
+            "Interpret arrows: they point in the direction energy flows"
+          ],
+          scenario: "Sea otters eat sea urchins, which graze on kelp forests along the Pacific coast.",
+          parts: [
+            "Describe what the arrows in a food web represent.",
+            "Explain how the removal of sea otters could lead to a trophic cascade.",
+            "Identify a keystone species and justify your choice.",
+            "Explain why a food web gives a more complete picture of an ecosystem than a food chain.",
+            "Propose one management action to prevent a trophic cascade after the loss of a keystone species, and explain how it would work."
+          ]
+        }
+      ]
+    },
+    {
+      id: 2,
+      name: "The Living World: Biodiversity",
+      examWeight: "6-8%",
+      bigIdea: "Biodiversity supports ecosystem resilience and services.",
+      topics: [
+        {
+          id: "2.1", name: "Introduction to Biodiversity", w: 3,
+          kw: ["biodiversity", "species richness", "species evenness", "genetic diversity", "ecosystem diversity", "habitat diversity", "bottleneck", "simpson", "diversity index"],
+          concepts: [
+            "Levels: genetic, species (richness and evenness), ecosystem/habitat diversity",
+            "Higher biodiversity means greater resilience to disturbance",
+            "Population bottlenecks reduce genetic diversity",
+            "Compare richness vs. evenness from data tables"
+          ],
+          scenario: "Students sampled two forest plots and recorded the number of individuals of each tree species.",
+          parts: [
+            "Using data from the two plots, identify which plot has greater species richness.",
+            "Explain the difference between species richness and species evenness.",
+            "Explain why ecosystems with higher biodiversity are generally more resilient to disturbance.",
+            "Describe how a population bottleneck affects genetic diversity and the population's ability to adapt.",
+            "Propose one strategy to increase the genetic diversity of a small, isolated population, and explain how it would work."
+          ]
+        },
+        {
+          id: "2.2", name: "Ecosystem Services", w: 4,
+          kw: ["ecosystem service", "provisioning", "regulating", "supporting", "cultural service", "pollination", "water purification", "erosion control"],
+          concepts: [
+            "Four categories: provisioning, regulating, cultural, supporting",
+            "Examples: pollination, water filtration, flood control, carbon storage, recreation",
+            "Human activities disrupt services and have economic costs",
+            "Be able to name a service AND explain how it is disrupted"
+          ],
+          scenario: "A county is considering draining a large wetland to build a housing development.",
+          parts: [
+            "Identify one regulating ecosystem service provided by the wetland.",
+            "Describe one provisioning ecosystem service provided by forests.",
+            "Explain how draining the wetland could have an economic cost to the community.",
+            "Describe how the loss of pollinators would affect agricultural production.",
+            "Propose one way to protect an ecosystem service threatened by development, and explain how it would work."
+          ]
+        },
+        {
+          id: "2.3", name: "Island Biogeography", w: 3,
+          kw: ["island biogeography", "island", "habitat fragmentation", "habitat island", "distance from mainland", "colonization", "corridor"],
+          concepts: [
+            "Larger islands and islands closer to the mainland support more species",
+            "Habitat fragments act like islands; wildlife corridors connect them",
+            "Island species are prone to extinction and vulnerable to invasive species",
+            "Interpret species-area graphs"
+          ],
+          scenario: "A highway is built through a large forest, splitting it into several smaller forest patches.",
+          parts: [
+            "Explain how island size affects the number of species an island can support.",
+            "Describe how distance from the mainland affects the rate of colonization.",
+            "Explain how habitat fragmentation is similar to the theory of island biogeography.",
+            "Propose one solution to reduce the impact of habitat fragmentation on wildlife."
+          ]
+        },
+        {
+          id: "2.4", name: "Ecological Tolerance", w: 2,
+          kw: ["ecological tolerance", "range of tolerance", "zone of physiological stress", "zone of intolerance", "optimal range", "tolerance"],
+          concepts: [
+            "Optimal range, zones of physiological stress, zones of intolerance",
+            "Tolerance limits apply to temperature, pH, salinity, dissolved oxygen, etc.",
+            "Organisms outside their tolerance range migrate, suffer, or die",
+            "Coral bleaching is a classic example of exceeding thermal tolerance"
+          ],
+          scenario: "A trout population lives in a stream where water temperature is rising due to removal of streamside trees.",
+          parts: [
+            "Describe what is meant by an organism's range of tolerance.",
+            "Explain what happens to an organism in the zone of physiological stress.",
+            "Explain how rising water temperatures could affect the trout population.",
+            "Identify an abiotic factor other than temperature that could limit the trout population.",
+            "Propose one action to keep an aquatic habitat within the range of tolerance of its organisms, and explain how it would work."
+          ]
+        },
+        {
+          id: "2.5", name: "Natural Disruptions to Ecosystems", w: 2,
+          kw: ["natural disruption", "disturbance", "wildfire", "hurricane", "volcanic eruption", "drought", "flood", "periodic", "episodic"],
+          concepts: [
+            "Disruptions can be periodic, episodic, or random",
+            "Natural disruptions can cause migration, population decline, or new habitat",
+            "Earth's climate has changed naturally over geologic time (ice cores)",
+            "Some ecosystems depend on disturbance (fire-adapted pines)"
+          ],
+          scenario: "A hurricane destroys much of a coastal forest and floods nearby wetlands with saltwater.",
+          parts: [
+            "Distinguish between periodic and episodic disruptions, giving an example of each.",
+            "Describe one effect of a natural disruption on wildlife populations.",
+            "Explain how some ecosystems depend on periodic fire.",
+            "Describe one type of evidence scientists use to determine past climate conditions.",
+            "Propose one way a community could reduce the impact of a natural disruption such as wildfire or flooding, and explain how it would work."
+          ]
+        },
+        {
+          id: "2.6", name: "Adaptations", w: 2,
+          kw: ["adaptation", "natural selection", "evolution", "fitness", "selective pressure", "adapt"],
+          concepts: [
+            "Natural selection: variation, overproduction, competition, differential survival",
+            "Adaptations increase fitness in a specific environment",
+            "Rapid environmental change can outpace a species' ability to adapt",
+            "Generalists tend to adapt better than specialists"
+          ],
+          scenario: "Arctic foxes have small ears and thick fur, while desert foxes have very large ears.",
+          parts: [
+            "Explain how natural selection leads to adaptations in a population.",
+            "Describe one adaptation of the desert fox and explain how it increases survival.",
+            "Explain why rapid environmental changes can lead to extinction.",
+            "Describe why species with short generation times can adapt more quickly.",
+            "Propose one conservation strategy to help species adapt to rapid climate change, and explain how it would work."
+          ]
+        },
+        {
+          id: "2.7", name: "Ecological Succession", w: 3,
+          kw: ["succession", "primary succession", "secondary succession", "pioneer species", "climax community", "lichen", "moss", "bare rock"],
+          concepts: [
+            "Primary succession starts on bare rock (lichens/moss pioneers); secondary starts with soil",
+            "Pioneer species build soil; biodiversity and biomass increase over time",
+            "Secondary succession is faster because soil and seeds remain",
+            "Indicator of ecosystem health and recovery after disturbance"
+          ],
+          scenario: "An abandoned farm field is left undisturbed for 100 years.",
+          parts: [
+            "Identify whether this is an example of primary or secondary succession and justify your answer.",
+            "Describe the role of pioneer species in primary succession.",
+            "Explain why secondary succession happens faster than primary succession.",
+            "Describe how biodiversity changes over the course of succession.",
+            "Propose one method to speed the recovery of an ecosystem after disturbance, and explain how it would work."
+          ]
+        }
+      ]
+    },
+    {
+      id: 3,
+      name: "Populations",
+      examWeight: "10-15%",
+      bigIdea: "Populations change in response to resources, reproduction strategies, and human factors.",
+      topics: [
+        {
+          id: "3.1", name: "Generalist and Specialist Species", w: 2,
+          kw: ["generalist", "specialist", "broad niche", "narrow niche"],
+          concepts: [
+            "Generalists: broad niche, tolerate varied conditions (raccoons, cockroaches)",
+            "Specialists: narrow niche, specific diet/habitat (pandas, koalas)",
+            "Specialists are more prone to extinction when habitats change",
+            "Generalists are often successful invasive species"
+          ],
+          scenario: "Giant pandas eat almost exclusively bamboo, while raccoons eat almost anything.",
+          parts: [
+            "Identify which species is a specialist and justify your answer.",
+            "Explain why specialist species are more vulnerable to extinction.",
+            "Explain why generalist species tend to become successful invasive species.",
+            "Describe an environmental change that would favor generalists over specialists.",
+            "Propose one strategy to protect a specialist species from habitat loss, and explain how it would work."
+          ]
+        },
+        {
+          id: "3.2", name: "K-Selected and r-Selected Species", w: 3,
+          kw: ["k-selected", "r-selected", "k selected", "r selected", "reproductive strategy", "parental care", "many offspring"],
+          concepts: [
+            "r-selected: many offspring, little parental care, short lifespan, early maturity",
+            "K-selected: few offspring, high parental care, long lifespan, near carrying capacity",
+            "K-selected species are more vulnerable to extinction and slower to recover",
+            "Invasive species are often r-selected"
+          ],
+          scenario: "Elephants produce one calf every 4-5 years, while mosquitoes lay hundreds of eggs at a time.",
+          parts: [
+            "Identify two characteristics of r-selected species.",
+            "Explain why K-selected species are more susceptible to population decline from habitat loss.",
+            "Explain why many invasive species are r-selected.",
+            "Describe how the population of an r-selected species responds to a sudden increase in resources.",
+            "Propose one way to help a declining K-selected species recover, and explain how it would work."
+          ]
+        },
+        {
+          id: "3.3", name: "Survivorship Curves", w: 3,
+          kw: ["survivorship curve", "survivorship", "type i", "type ii", "type iii", "mortality"],
+          concepts: [
+            "Type I: high survival until old age (humans, K-selected)",
+            "Type II: constant mortality (birds, some reptiles)",
+            "Type III: high early mortality (fish, insects, r-selected)",
+            "Survivorship curves are drawn on a log scale"
+          ],
+          scenario: "A graph shows the percentage of individuals surviving at each age for three different species.",
+          parts: [
+            "Identify the type of survivorship curve shown for oysters and describe its shape.",
+            "Explain how survivorship curves relate to r- and K-selected reproductive strategies.",
+            "Describe how improvements in health care have changed the human survivorship curve.",
+            "Identify an organism that would exhibit a Type II survivorship curve.",
+            "Propose one action to increase the survival of juveniles in a species with a Type III survivorship curve, and explain how it would work."
+          ]
+        },
+        {
+          id: "3.4", name: "Carrying Capacity", w: 3,
+          kw: ["carrying capacity", "overshoot", "die-off", "dieoff", "limiting factor", "density-dependent", "density-independent"],
+          concepts: [
+            "Carrying capacity (K) is the max population the environment can sustain",
+            "Overshoot leads to resource depletion and die-off",
+            "Density-dependent factors (disease, competition) vs. density-independent (weather, fire)",
+            "Human carrying capacity is debated; technology has expanded it"
+          ],
+          scenario: "Reindeer were introduced to St. Matthew Island with no predators. The population grew to 6,000 and then crashed to 42.",
+          parts: [
+            "Define carrying capacity.",
+            "Explain why the reindeer population crashed after exceeding carrying capacity.",
+            "Identify one density-dependent factor and one density-independent factor that could limit a population.",
+            "Describe how the carrying capacity of an ecosystem can change over time.",
+            "Propose one way to keep a wildlife population from overshooting its carrying capacity, and explain how it would work."
+          ]
+        },
+        {
+          id: "3.5", name: "Population Growth and Resource Availability", w: 3,
+          kw: ["exponential growth", "logistic growth", "j-curve", "s-curve", "j curve", "s curve", "biotic potential", "population growth"],
+          concepts: [
+            "Exponential growth (J-curve) occurs with unlimited resources",
+            "Logistic growth (S-curve) levels off at carrying capacity",
+            "Resource availability and environmental resistance limit growth",
+            "Rule of 70: doubling time = 70 / percent growth rate"
+          ],
+          scenario: "A population of rabbits grows rapidly after introduction to a new habitat, then levels off.",
+          parts: [
+            "Identify the type of growth curve shown and describe its shape.",
+            "Explain what causes a population to shift from exponential growth to logistic growth.",
+            "Calculate the doubling time of a population growing at 3.5 percent per year. Show your work.",
+            "Describe one factor that could cause the population to exceed carrying capacity.",
+            "Propose one method to limit the exponential growth of an introduced species, and explain how it would work."
+          ],
+          calc: "Doubling time = 70 / growth rate (%)"
+        },
+        {
+          id: "3.6", name: "Age Structure Diagrams", w: 4,
+          kw: ["age structure", "population pyramid", "age-structure", "prereproductive", "postreproductive", "reproductive age", "cohort"],
+          concepts: [
+            "Pyramid (wide base) = rapid growth; column = stable; inverted/narrow base = declining",
+            "Read cohorts: pre-reproductive (0-14), reproductive (15-44), post-reproductive (45+)",
+            "Population momentum: a large young cohort keeps growing even after TFR drops",
+            "Link diagram shape to demographic transition stage"
+          ],
+          scenario: "Age structure diagrams are given for Nigeria, the United States, and Japan.",
+          parts: [
+            "Identify which country's age structure diagram indicates rapid population growth and justify your answer.",
+            "Describe one economic challenge faced by a country with an age structure like Japan's.",
+            "Explain the concept of population momentum.",
+            "Predict how the age structure of a rapidly growing country will change as it industrializes.",
+            "Propose one policy a country with a rapidly aging population could adopt, and explain how it would address the problem."
+          ]
+        },
+        {
+          id: "3.7", name: "Total Fertility Rate", w: 3,
+          kw: ["total fertility rate", "tfr", "replacement level", "replacement fertility", "fertility", "infant mortality"],
+          concepts: [
+            "TFR = average number of children per woman in her lifetime",
+            "Replacement-level fertility ~2.1 (higher in developing countries due to infant mortality)",
+            "Factors lowering TFR: education of women, access to family planning, urbanization, higher age at marriage",
+            "High infant mortality is associated with high TFR"
+          ],
+          scenario: "A developing country has a total fertility rate of 5.2 and high infant mortality.",
+          parts: [
+            "Define total fertility rate.",
+            "Explain why replacement-level fertility is slightly higher than 2.0.",
+            "Describe two factors that could lower the total fertility rate in a developing country.",
+            "Explain the relationship between infant mortality and total fertility rate.",
+            "Propose one policy that would reduce the total fertility rate in a developing country, and explain how it would work."
+          ]
+        },
+        {
+          id: "3.8", name: "Human Population Dynamics", w: 4,
+          kw: ["birth rate", "death rate", "crude birth rate", "crude death rate", "immigration", "emigration", "growth rate", "malthus", "doubling time", "rule of 70", "human population"],
+          concepts: [
+            "Growth rate (%) = (CBR - CDR) / 10 when rates are per 1,000",
+            "Population change = (births + immigration) - (deaths + emigration)",
+            "Rule of 70 for doubling time",
+            "Malthusian theory; factors affecting human carrying capacity"
+          ],
+          scenario: "A country has a crude birth rate of 32 per 1,000 and a crude death rate of 8 per 1,000.",
+          parts: [
+            "Calculate the population growth rate as a percentage. Show your work.",
+            "Using your answer, calculate the doubling time of the population. Show your work.",
+            "Identify one factor that has caused global death rates to decline over the past century.",
+            "Describe one environmental impact of rapid human population growth.",
+            "Propose one solution to reduce the environmental impact of rapid human population growth, and explain how it would work."
+          ],
+          calc: "Growth rate % = (CBR - CDR)/10; doubling = 70/rate"
+        },
+        {
+          id: "3.9", name: "Demographic Transition", w: 4,
+          kw: ["demographic transition", "preindustrial", "pre-industrial", "transitional", "industrial", "postindustrial", "post-industrial", "stage 1", "stage 2", "stage 3", "stage 4"],
+          concepts: [
+            "Stage 1 (pre-industrial): high CBR and CDR; Stage 2: CDR drops (fastest growth)",
+            "Stage 3 (industrial): CBR drops; Stage 4 (post-industrial): low CBR and CDR",
+            "CDR falls first due to improved sanitation, medicine, food supply",
+            "Know which stage has the highest growth rate and why"
+          ],
+          scenario: "A graph shows birth and death rates of a country over 200 years as it develops.",
+          parts: [
+            "Identify the stage of the demographic transition in which population growth is highest and explain why.",
+            "Describe one factor that causes death rates to fall during stage 2.",
+            "Explain why birth rates decline during the industrial stage.",
+            "Describe the age structure of a country in the post-industrial stage.",
+            "Propose one action a stage 2 country could take to move more quickly to stage 3 of the demographic transition, and explain how it would work."
+          ]
+        }
+      ]
+    }
+  ];
+
+  root.APES_KB = (root.APES_KB || []).concat(units);
+  if (typeof module !== "undefined" && module.exports) module.exports = units;
+})(typeof globalThis !== "undefined" ? globalThis : this);
+
+</script>
+<script>
+/*
+ * APES knowledge base — Units 4-6. See units-1-3.js for field meanings.
+ */
+(function (root) {
+  const units = [
+    {
+      id: 4,
+      name: "Earth Systems and Resources",
+      examWeight: "10-15%",
+      bigIdea: "Earth's geology, soil, atmosphere, and climate shape where life and resources exist.",
+      topics: [
+        {
+          id: "4.1", name: "Plate Tectonics", w: 3,
+          kw: ["plate tectonics", "plate boundary", "convergent", "divergent", "transform", "subduction", "earthquake", "volcano", "ring of fire", "hot spot", "mid-ocean ridge", "tectonic"],
+          concepts: [
+            "Convergent (subduction, mountains, volcanoes), divergent (ridges, rift valleys), transform (earthquakes)",
+            "Ring of Fire around the Pacific; hot spots (Hawaii)",
+            "Read maps of plate boundaries and predict geologic features",
+            "Tectonics also creates geothermal energy resources and mineral deposits"
+          ],
+          scenario: "A map shows the boundary between the Nazca Plate and the South American Plate along the west coast of South America.",
+          parts: [
+            "Identify the type of plate boundary shown and justify your answer.",
+            "Describe one geologic feature that forms at a convergent boundary.",
+            "Explain why earthquakes are common along transform boundaries.",
+            "Describe how plate tectonics can influence the location of geothermal energy resources.",
+            "Propose one way a city located near a plate boundary could reduce the risk to people from earthquakes or volcanoes, and explain how it would work."
+          ]
+        },
+        {
+          id: "4.2", name: "Soil Formation and Erosion", w: 4,
+          kw: ["soil formation", "soil horizon", "o horizon", "a horizon", "b horizon", "c horizon", "topsoil", "parent material", "humus", "erosion", "weathering", "leaching"],
+          concepts: [
+            "Horizons: O (organic/humus), A (topsoil), E (leaching), B (subsoil), C (parent material), R (bedrock)",
+            "Soil formation: weathering of parent material + organic matter; very slow",
+            "Erosion by wind and water; worsened by tilling, overgrazing, deforestation",
+            "Conservation: contour plowing, terracing, windbreaks, no-till, cover crops"
+          ],
+          scenario: "A farmer notices that topsoil is being washed away from a sloped field after heavy rains.",
+          parts: [
+            "Identify the soil horizon that contains the most organic matter.",
+            "Describe one natural process involved in soil formation.",
+            "Explain how tilling increases soil erosion.",
+            "Propose one agricultural practice that would reduce soil erosion on the sloped field and explain how it works."
+          ]
+        },
+        {
+          id: "4.3", name: "Soil Composition and Properties", w: 4,
+          kw: ["soil texture", "soil triangle", "sand", "silt", "clay", "loam", "porosity", "permeability", "water holding capacity", "soil fertility", "soil ph"],
+          concepts: [
+            "Texture triangle: % sand, silt, clay (loam is ideal for agriculture)",
+            "Sand: high permeability, low water-holding; clay: low permeability, high water-holding",
+            "Soil fertility depends on organic matter, nutrients, pH, CEC",
+            "Lab: measure permeability/porosity, percolation rate"
+          ],
+          scenario: "A soil sample is found to contain 40 percent sand, 40 percent silt, and 20 percent clay.",
+          parts: [
+            "Using the soil texture triangle, identify the soil type of the sample.",
+            "Explain why sandy soils have low water-holding capacity.",
+            "Describe one characteristic that makes loam ideal for growing crops.",
+            "Design a simple experiment to compare the permeability of two soil samples. Identify the independent and dependent variables.",
+            "Propose one way a farmer could improve the water-holding capacity of a sandy soil, and explain how it would work."
+          ]
+        },
+        {
+          id: "4.4", name: "Earth's Atmosphere", w: 3,
+          kw: ["atmosphere", "troposphere", "stratosphere", "mesosphere", "thermosphere", "exosphere", "atmospheric layer", "atmospheric composition"],
+          concepts: [
+            "Composition: ~78% N2, 21% O2, ~0.9% Ar, ~0.04% CO2",
+            "Troposphere: weather, temperature decreases with altitude",
+            "Stratosphere: ozone layer, temperature increases with altitude",
+            "Layers defined by temperature gradient"
+          ],
+          scenario: "A graph shows how temperature changes with altitude through Earth's atmosphere.",
+          parts: [
+            "Identify the most abundant gas in Earth's atmosphere.",
+            "Identify the layer of the atmosphere where weather occurs.",
+            "Explain why temperature increases with altitude in the stratosphere.",
+            "Describe the importance of the ozone layer to life on Earth.",
+            "Propose one action to protect the composition of the atmosphere from human activity, and explain how it would work."
+          ]
+        },
+        {
+          id: "4.5", name: "Global Wind Patterns", w: 2,
+          kw: ["wind pattern", "coriolis", "hadley cell", "trade winds", "westerlies", "jet stream", "convection cell", "atmospheric circulation"],
+          concepts: [
+            "Uneven solar heating + Earth's rotation (Coriolis effect) drive global winds",
+            "Hadley cells: rising air at equator (rain), sinking at 30 degrees (deserts)",
+            "Trade winds, westerlies, polar easterlies",
+            "Explains distribution of rainforests and deserts"
+          ],
+          scenario: "Most of the world's large deserts are located near 30 degrees N and 30 degrees S latitude.",
+          parts: [
+            "Explain why air rises at the equator.",
+            "Explain why many deserts are located near 30 degrees latitude.",
+            "Describe the Coriolis effect and its impact on global wind patterns.",
+            "Identify the prevailing wind direction in the mid-latitudes of the Northern Hemisphere.",
+            "Propose one way global wind patterns could be considered when siting a wind farm, and explain your reasoning."
+          ]
+        },
+        {
+          id: "4.6", name: "Watersheds", w: 3,
+          kw: ["watershed", "drainage basin", "riparian", "headwaters", "river basin", "stream"],
+          concepts: [
+            "A watershed is all land that drains into a particular body of water",
+            "Characteristics: area, slope, soil, vegetation",
+            "Human activities upstream (agriculture, development) affect water quality downstream",
+            "Riparian buffers protect stream water quality"
+          ],
+          scenario: "A city's drinking water comes from a reservoir located in a forested watershed that is being considered for logging.",
+          parts: [
+            "Define a watershed.",
+            "Describe one human activity in a watershed that could reduce water quality downstream.",
+            "Explain how vegetation within a watershed affects the amount of runoff.",
+            "Propose a strategy to protect water quality in the watershed."
+          ]
+        },
+        {
+          id: "4.7", name: "Solar Radiation and Earth's Seasons", w: 2,
+          kw: ["solar radiation", "insolation", "seasons", "axial tilt", "albedo", "angle of incidence", "equinox", "solstice"],
+          concepts: [
+            "Seasons are caused by Earth's 23.5 degree axial tilt, not distance from the sun",
+            "Insolation is greatest at the equator (most direct angle)",
+            "Albedo: reflectivity; ice/snow high, dark surfaces low",
+            "Albedo feedback: melting ice lowers albedo and amplifies warming"
+          ],
+          scenario: "Arctic sea ice has been decreasing in extent over the past four decades.",
+          parts: [
+            "Explain what causes Earth's seasons.",
+            "Explain why the equator receives more solar radiation per unit area than the poles.",
+            "Define albedo and identify a surface with high albedo.",
+            "Explain how melting sea ice creates a positive feedback loop that increases warming.",
+            "Propose one way to reduce the urban heat island effect by changing surface albedo, and explain how it would work."
+          ]
+        },
+        {
+          id: "4.8", name: "Earth's Geography and Climate", w: 2,
+          kw: ["rain shadow", "orographic", "windward", "leeward", "mountain", "geography", "climate", "ocean current"],
+          concepts: [
+            "Rain shadow effect: windward side wet, leeward side dry",
+            "Proximity to oceans moderates temperature",
+            "Ocean currents redistribute heat (Gulf Stream)",
+            "Elevation affects temperature and precipitation"
+          ],
+          scenario: "The western slopes of the Sierra Nevada receive heavy precipitation while the eastern side is desert.",
+          parts: [
+            "Explain the rain shadow effect.",
+            "Identify which side of the mountain range is the leeward side.",
+            "Describe how ocean currents influence climate in coastal regions.",
+            "Explain why coastal areas generally have milder temperatures than inland areas.",
+            "Propose one water-management strategy for a community located in a rain shadow, and explain how it would work."
+          ]
+        },
+        {
+          id: "4.9", name: "El Nino and La Nina", w: 2,
+          kw: ["el nino", "la nina", "enso", "upwelling", "southern oscillation", "el niño", "la niña", "walker circulation"],
+          concepts: [
+            "El Nino: weakened trade winds, warm water shifts east, reduced upwelling off South America",
+            "La Nina: stronger trade winds, cooler eastern Pacific",
+            "Reduced upwelling lowers nutrients and fish populations (anchovy fishery)",
+            "Global effects on precipitation and storms"
+          ],
+          scenario: "Fishermen off the coast of Peru notice a dramatic drop in anchovy catch during a warm year.",
+          parts: [
+            "Describe the changes in trade winds that occur during an El Nino event.",
+            "Explain how El Nino reduces fish populations off the coast of Peru.",
+            "Describe one effect of El Nino on weather in the southern United States.",
+            "Compare ocean conditions during La Nina with those during El Nino.",
+            "Propose one way fishing communities could reduce the economic impact of El Nino events, and explain how it would work."
+          ]
+        }
+      ]
+    },
+    {
+      id: 5,
+      name: "Land and Water Use",
+      examWeight: "10-15%",
+      bigIdea: "Human land and water use has consequences that sustainable practices can reduce.",
+      topics: [
+        {
+          id: "5.1", name: "The Tragedy of the Commons", w: 3,
+          kw: ["tragedy of the commons", "commons", "common resource", "shared resource", "overexploitation", "overgrazing", "garrett hardin"],
+          concepts: [
+            "Individuals acting in self-interest deplete shared resources",
+            "Examples: overfishing, overgrazing, air/water pollution, groundwater depletion",
+            "Solutions: regulation, quotas, privatization, permits",
+            "Free-rider problem"
+          ],
+          scenario: "Several ranchers graze cattle on a shared public pasture with no limits on herd size.",
+          parts: [
+            "Explain how this scenario is an example of the tragedy of the commons.",
+            "Identify another example of the tragedy of the commons.",
+            "Propose one solution to the tragedy of the commons and explain how it works.",
+            "Describe one environmental consequence of overgrazing."
+          ]
+        },
+        {
+          id: "5.2", name: "Clearcutting", w: 3,
+          kw: ["clearcutting", "clear-cutting", "clearcut", "deforestation", "logging", "timber", "slash and burn"],
+          concepts: [
+            "Clearcutting is economical but causes erosion, habitat loss, increased runoff and stream temperature",
+            "Releases stored carbon; reduces carbon sequestration",
+            "Alternatives: selective cutting, shelterwood, strip cutting",
+            "Effects on soil nutrients and stream sedimentation"
+          ],
+          scenario: "A timber company plans to clearcut a 500-hectare forest on a hillside next to a trout stream.",
+          parts: [
+            "Describe one economic benefit of clearcutting.",
+            "Explain how clearcutting could affect water quality in the nearby stream.",
+            "Describe how clearcutting contributes to climate change.",
+            "Propose an alternative forestry practice and explain how it reduces environmental impact."
+          ]
+        },
+        {
+          id: "5.3", name: "The Green Revolution", w: 3,
+          kw: ["green revolution", "high-yield", "high yield", "monoculture", "mechanization", "gmo", "genetically modified", "synthetic fertilizer"],
+          concepts: [
+            "Mechanization, high-yield varieties, fertilizer, irrigation, pesticides increased yields",
+            "GMOs: pros (yield, drought/pest resistance) and cons (loss of genetic diversity, resistance)",
+            "Monocultures reduce biodiversity and increase vulnerability to pests",
+            "Increased fossil fuel dependence in agriculture"
+          ],
+          scenario: "Between 1950 and 1990, global grain production nearly tripled while farmland area increased only slightly.",
+          parts: [
+            "Identify two practices of the Green Revolution that increased crop yields.",
+            "Explain one environmental consequence of growing crops in monocultures.",
+            "Describe one benefit and one drawback of genetically modified crops.",
+            "Explain how the Green Revolution increased agriculture's dependence on fossil fuels.",
+            "Propose one practice that keeps Green Revolution yields high while reducing environmental harm, and explain how it works."
+          ]
+        },
+        {
+          id: "5.4", name: "Impacts of Agricultural Practices", w: 4,
+          kw: ["agricultural practice", "tilling", "slash-and-burn", "fertilizer", "salinization", "desertification", "soil degradation", "tillage"],
+          concepts: [
+            "Tilling increases erosion and loss of organic matter",
+            "Slash-and-burn releases CO2 and depletes soil nutrients",
+            "Synthetic fertilizer runoff causes eutrophication",
+            "Desertification from overgrazing, overcultivation, drought"
+          ],
+          scenario: "Farmers in a semi-arid region have tilled and irrigated land intensively for decades and yields are now falling.",
+          parts: [
+            "Describe one environmental impact of slash-and-burn agriculture.",
+            "Explain how excessive use of synthetic fertilizers affects aquatic ecosystems.",
+            "Describe one cause of desertification.",
+            "Compare organic fertilizer with synthetic fertilizer, describing one advantage of each.",
+            "Propose one way to reduce soil degradation on farmland, and explain how it would work."
+          ]
+        },
+        {
+          id: "5.5", name: "Irrigation Methods", w: 3,
+          kw: ["irrigation", "drip irrigation", "flood irrigation", "furrow irrigation", "spray irrigation", "salinization", "waterlogging", "center pivot"],
+          concepts: [
+            "Drip (~95% efficient), spray (~75-95%), furrow (~65%), flood (~80% but waterlogging)",
+            "Salinization: salts left behind as irrigation water evaporates",
+            "Waterlogging raises water table and suffocates roots",
+            "Agriculture is the largest global user of freshwater"
+          ],
+          scenario: "A farm uses furrow irrigation in a hot, dry climate and is experiencing declining yields and white crust on the soil.",
+          parts: [
+            "Identify the most efficient irrigation method and explain why it uses less water.",
+            "Explain how irrigation can lead to soil salinization.",
+            "Describe one disadvantage of flood irrigation.",
+            "Calculate the volume of water saved per year if the farm switches from furrow (65% efficient) to drip (95% efficient) irrigation to deliver 2,000,000 liters to crops. Show your work.",
+            "Propose one way to reduce soil salinization from irrigation, and explain how it would work."
+          ],
+          calc: "Water applied = water needed / efficiency"
+        },
+        {
+          id: "5.6", name: "Pest Control Methods", w: 3,
+          kw: ["pesticide", "pest control", "herbicide", "insecticide", "pesticide resistance", "pesticide treadmill", "ddt", "neonicotinoid"],
+          concepts: [
+            "Pesticides increase yields but kill non-target species and pollinators",
+            "Pests evolve resistance (pesticide treadmill) — natural selection",
+            "Persistent pesticides biomagnify (DDT)",
+            "GM crops engineered for pest/herbicide resistance"
+          ],
+          scenario: "A farmer finds that the same pesticide is becoming less effective at controlling corn rootworms each year.",
+          parts: [
+            "Explain how pests become resistant to pesticides through natural selection.",
+            "Describe one environmental impact of pesticide use on non-target organisms.",
+            "Describe the 'pesticide treadmill.'",
+            "Identify one alternative to chemical pesticides.",
+            "Propose one way to slow the development of pesticide resistance, and explain how it would work."
+          ]
+        },
+        {
+          id: "5.7", name: "Meat Production Methods", w: 3,
+          kw: ["meat production", "cafo", "feedlot", "concentrated animal feeding", "free range", "livestock", "manure lagoon", "rotational grazing", "beef"],
+          concepts: [
+            "CAFOs: efficient but produce concentrated waste, antibiotics use, methane",
+            "Manure runoff causes eutrophication and fecal coliform contamination",
+            "Free-range/rotational grazing: less waste concentration but more land; overgrazing risk",
+            "Meat production requires more land, water, and energy per calorie (10% rule)"
+          ],
+          scenario: "A concentrated animal feeding operation (CAFO) houses 10,000 cattle near a river.",
+          parts: [
+            "Describe one economic advantage of CAFOs.",
+            "Explain how waste from CAFOs can affect nearby surface water.",
+            "Explain why antibiotic use in CAFOs is a public health concern.",
+            "Propose one way to reduce the environmental impact of meat production."
+          ]
+        },
+        {
+          id: "5.8", name: "Impacts of Overfishing", w: 3,
+          kw: ["overfishing", "fishery", "bycatch", "trawling", "bottom trawling", "fishery collapse", "drift net", "longline", "fish stock"],
+          concepts: [
+            "Overfishing leads to fishery collapse (Atlantic cod)",
+            "Bottom trawling destroys benthic habitat; bycatch kills non-target species",
+            "Solutions: quotas, marine protected areas, gear restrictions, size limits",
+            "Fishing down the food web"
+          ],
+          scenario: "The Atlantic cod fishery off Newfoundland collapsed in 1992 after decades of intensive fishing.",
+          parts: [
+            "Describe one fishing practice that causes high levels of bycatch.",
+            "Explain how bottom trawling affects marine ecosystems.",
+            "Propose one solution to overfishing and explain how it would allow the fishery to recover.",
+            "Explain how overfishing of a top predator can affect lower trophic levels."
+          ]
+        },
+        {
+          id: "5.9", name: "Impacts of Mining", w: 3,
+          kw: ["mining", "surface mining", "strip mining", "mountaintop removal", "subsurface mining", "acid mine drainage", "tailings", "overburden", "ore", "reclamation"],
+          concepts: [
+            "Surface (strip, open-pit, mountaintop removal) vs. subsurface mining",
+            "Acid mine drainage: sulfides react with water/oxygen, lowering pH and mobilizing metals",
+            "Tailings, habitat destruction, worker health (black lung)",
+            "Reclamation and the Surface Mining Control and Reclamation Act"
+          ],
+          scenario: "A coal company proposes mountaintop removal mining in a forested region of Appalachia.",
+          parts: [
+            "Describe one environmental impact of mountaintop removal mining.",
+            "Explain how acid mine drainage forms and how it affects aquatic organisms.",
+            "Describe one human health risk associated with subsurface mining.",
+            "Describe one method of reclaiming land after surface mining.",
+            "Propose one way to reduce the environmental impact of mining, and explain how it would work."
+          ]
+        },
+        {
+          id: "5.10", name: "Impacts of Urbanization", w: 3,
+          kw: ["urbanization", "urban sprawl", "impervious surface", "urban heat island", "saltwater intrusion", "suburb", "city"],
+          concepts: [
+            "Impervious surfaces increase runoff and flooding, decrease groundwater recharge",
+            "Urban heat island effect",
+            "Saltwater intrusion from groundwater over-pumping in coastal cities",
+            "Urban sprawl increases car dependence and habitat loss"
+          ],
+          scenario: "A rapidly growing coastal city is replacing farmland and forests with roads, parking lots, and housing.",
+          parts: [
+            "Explain how impervious surfaces affect the hydrologic cycle.",
+            "Describe the urban heat island effect and one cause of it.",
+            "Explain how excessive groundwater withdrawal in coastal cities can lead to saltwater intrusion.",
+            "Describe one environmental consequence of urban sprawl.",
+            "Propose one urban planning strategy to reduce the impacts of urban sprawl, and explain how it would work."
+          ]
+        },
+        {
+          id: "5.11", name: "Ecological Footprints", w: 2,
+          kw: ["ecological footprint", "carbon footprint", "footprint", "biocapacity", "global hectare"],
+          concepts: [
+            "Ecological footprint: land/water area needed to support a person's consumption and waste",
+            "Carbon footprint: total greenhouse gas emissions from activities",
+            "Developed nations have much larger per-capita footprints",
+            "Ways to reduce footprints: diet, transportation, energy use"
+          ],
+          scenario: "The average ecological footprint of a person in the United States is about 8 global hectares, compared with 1.2 in India.",
+          parts: [
+            "Define ecological footprint.",
+            "Explain why per-capita ecological footprints are larger in developed countries.",
+            "Describe two actions an individual could take to reduce their carbon footprint.",
+            "Calculate how many Earths would be needed if everyone lived like the average U.S. resident, given 1.6 global hectares of biocapacity per person. Show your work.",
+            "Propose one community-level change that would reduce residents' ecological footprint, and explain how it would work."
+          ],
+          calc: "Earths needed = footprint / biocapacity per person"
+        },
+        {
+          id: "5.12", name: "Introduction to Sustainability", w: 2,
+          kw: ["sustainability", "sustainable yield", "maximum sustainable yield", "environmental indicator", "sustainable"],
+          concepts: [
+            "Sustainability: meeting present needs without compromising future generations",
+            "Sustainable yield: amount of a renewable resource that can be harvested without depletion",
+            "Environmental indicators: biodiversity, food production, temperature, CO2, ozone, population",
+            "Maximum sustainable yield is about half of carrying capacity"
+          ],
+          scenario: "A forest manager wants to harvest timber at a rate that allows the forest to provide timber indefinitely.",
+          parts: [
+            "Define sustainable yield.",
+            "Identify one environmental indicator that can be used to assess sustainability.",
+            "Explain why harvesting above the maximum sustainable yield will deplete a resource.",
+            "Describe one practice that increases the sustainability of resource use.",
+            "Propose one policy that would keep a fishery or forest harvest at a sustainable yield, and explain how it would work."
+          ]
+        },
+        {
+          id: "5.13", name: "Methods to Reduce Urban Runoff", w: 4,
+          kw: ["urban runoff", "stormwater", "permeable pavement", "green roof", "rain garden", "bioswale", "retention pond"],
+          concepts: [
+            "Permeable pavement, green roofs, rain gardens, bioswales increase infiltration",
+            "Public transit, building up not out, reduce runoff and sprawl",
+            "Benefits: less flooding, less pollution in waterways, groundwater recharge",
+            "Know a method AND the mechanism by which it reduces runoff"
+          ],
+          scenario: "After a heavy storm, a city's streets flood and oil and fertilizer wash into a nearby river.",
+          parts: [
+            "Propose one method to reduce urban runoff and explain how it works.",
+            "Describe one benefit of green roofs other than reducing runoff.",
+            "Identify one pollutant commonly found in urban stormwater runoff.",
+            "Explain how reducing urban runoff could improve water quality in the river."
+          ]
+        },
+        {
+          id: "5.14", name: "Integrated Pest Management", w: 3,
+          kw: ["integrated pest management", "ipm", "biological control", "crop rotation", "intercropping", "natural predator", "pheromone trap"],
+          concepts: [
+            "IPM combines biological, physical, and limited chemical controls",
+            "Methods: crop rotation, intercropping, biocontrol (ladybugs), traps, monitoring",
+            "Benefits: less pesticide, less resistance, protects pollinators",
+            "Drawbacks: more time, knowledge, and cost; biocontrols can become invasive"
+          ],
+          scenario: "An orchard owner wants to reduce pesticide use while still controlling an aphid infestation.",
+          parts: [
+            "Describe one method used in integrated pest management.",
+            "Explain one advantage of IPM over relying solely on chemical pesticides.",
+            "Describe one disadvantage of using biological controls.",
+            "Explain how crop rotation reduces pest populations.",
+            "Propose an integrated pest management plan for a crop, describing two methods and explaining how each controls pests."
+          ]
+        },
+        {
+          id: "5.15", name: "Sustainable Agriculture", w: 4,
+          kw: ["sustainable agriculture", "contour plowing", "terracing", "windbreak", "no-till", "cover crop", "perennial crop", "strip cropping", "green manure", "rotational grazing", "agroforestry"],
+          concepts: [
+            "Soil conservation: contour plowing, terracing, windbreaks, no-till, perennial crops, strip cropping",
+            "Improving soil fertility: crop rotation (legumes), green manure, limestone",
+            "Rotational grazing prevents overgrazing",
+            "Explain HOW each practice reduces erosion or improves fertility"
+          ],
+          scenario: "A farming cooperative wants to maintain soil fertility and reduce erosion without relying on synthetic inputs.",
+          parts: [
+            "Describe one soil conservation technique and explain how it reduces erosion.",
+            "Explain how crop rotation with legumes improves soil fertility.",
+            "Describe how rotational grazing prevents overgrazing.",
+            "Propose one sustainable practice to increase soil organic matter."
+          ]
+        },
+        {
+          id: "5.16", name: "Aquaculture", w: 2,
+          kw: ["aquaculture", "fish farm", "fish farming", "mariculture", "farmed salmon"],
+          concepts: [
+            "Benefits: less land/fuel, high yield, reduces pressure on wild fish",
+            "Drawbacks: concentrated waste, disease spread to wild fish, escapees, antibiotics",
+            "Farmed carnivorous fish (salmon) require wild-caught fishmeal",
+            "Open net pens vs. closed systems"
+          ],
+          scenario: "A company proposes building open net-pen salmon farms in a coastal bay.",
+          parts: [
+            "Describe one benefit of aquaculture compared with wild-caught fishing.",
+            "Explain how open net-pen aquaculture can harm wild fish populations.",
+            "Describe how waste from fish farms can affect water quality.",
+            "Explain why farming carnivorous fish may not reduce pressure on wild fisheries.",
+            "Propose one way to reduce the environmental impact of fish farming, and explain how it would work."
+          ]
+        },
+        {
+          id: "5.17", name: "Sustainable Forestry", w: 2,
+          kw: ["sustainable forestry", "selective cutting", "selective logging", "reforestation", "ecologically sustainable forestry", "prescribed burn", "controlled burn", "fsc", "tree plantation"],
+          concepts: [
+            "Selective cutting, reforestation, using recycled wood, protecting old growth",
+            "Prescribed burns reduce fuel load and catastrophic wildfire risk",
+            "Removing diseased trees; integrated pest management for forest pests",
+            "Tree plantations: monocultures with low biodiversity"
+          ],
+          scenario: "A national forest has dense undergrowth after decades of fire suppression.",
+          parts: [
+            "Explain how prescribed burns reduce the risk of catastrophic wildfires.",
+            "Describe one sustainable forestry practice.",
+            "Explain why tree plantations support less biodiversity than natural forests.",
+            "Describe one benefit of reforestation.",
+            "Propose one sustainable forestry practice for a logging company, and explain how it protects the forest ecosystem."
+          ]
+        }
+      ]
+    },
+    {
+      id: 6,
+      name: "Energy Resources and Consumption",
+      examWeight: "10-15%",
+      bigIdea: "Energy choices affect the environment; conservation and renewables reduce impacts.",
+      topics: [
+        {
+          id: "6.1", name: "Renewable and Nonrenewable Resources", w: 2,
+          kw: ["renewable", "nonrenewable", "non-renewable", "depletable", "nondepletable", "finite resource"],
+          concepts: [
+            "Nonrenewable: fossil fuels, uranium (finite)",
+            "Renewable: depletable (biomass) vs. nondepletable (solar, wind, geothermal)",
+            "Renewables can become depleted if used faster than replenished",
+            "Classify energy sources correctly"
+          ],
+          scenario: "A state's energy plan lists coal, natural gas, uranium, wood, solar, and wind as energy sources.",
+          parts: [
+            "Classify each source as renewable or nonrenewable.",
+            "Explain how a renewable resource like timber can become depleted.",
+            "Identify one nondepletable energy source.",
+            "Explain why nuclear power is classified as nonrenewable.",
+            "Propose one way a state could increase its use of nondepletable energy sources, and explain how it would work."
+          ]
+        },
+        {
+          id: "6.2", name: "Global Energy Consumption", w: 2,
+          kw: ["energy consumption", "per capita energy", "developed countries", "developing countries", "energy demand"],
+          concepts: [
+            "Developed countries use far more energy per capita",
+            "Fossil fuels are the most-used energy source globally",
+            "Energy use rises with industrialization",
+            "Availability, price, and government policy drive energy choices"
+          ],
+          scenario: "A graph shows per capita energy consumption in several countries over 50 years.",
+          parts: [
+            "Identify the most widely used energy source in the world today.",
+            "Explain why per capita energy consumption is higher in developed countries.",
+            "Describe one factor that influences a country's choice of energy sources.",
+            "Predict how energy consumption will change in developing countries as they industrialize.",
+            "Propose one policy to reduce per capita energy consumption in a developed country, and explain how it would work."
+          ]
+        },
+        {
+          id: "6.3", name: "Fuel Types and Uses", w: 2,
+          kw: ["fuel type", "wood", "charcoal", "peat", "lignite", "bituminous", "anthracite", "subbituminous", "cogeneration", "fuel"],
+          concepts: [
+            "Coal types: peat, lignite, sub-bituminous, bituminous, anthracite (increasing energy density)",
+            "Wood and charcoal in developing countries (deforestation, indoor air pollution)",
+            "Natural gas: cleanest fossil fuel (least CO2 per unit energy)",
+            "Cogeneration uses waste heat"
+          ],
+          scenario: "Many households in rural areas of developing countries cook with wood and charcoal.",
+          parts: [
+            "Identify the type of coal with the highest energy content.",
+            "Explain why natural gas produces less CO2 per unit of energy than coal.",
+            "Describe one environmental effect of using wood as a primary fuel.",
+            "Describe how cogeneration increases energy efficiency.",
+            "Propose one alternative to cooking with wood or charcoal in developing countries, and explain how it would reduce environmental harm."
+          ]
+        },
+        {
+          id: "6.4", name: "Distribution of Natural Energy Resources", w: 1,
+          kw: ["distribution of energy", "energy reserves", "oil reserves", "geopolitics"],
+          concepts: [
+            "Fossil fuel reserves are unevenly distributed",
+            "Solar, wind, geothermal potential depends on location",
+            "Energy dependence and geopolitics",
+            "Read maps of resource potential"
+          ],
+          scenario: "A map shows solar energy potential across the United States.",
+          parts: [
+            "Identify a region of the U.S. with high solar energy potential and explain why.",
+            "Explain why geothermal energy is available only in certain locations.",
+            "Describe one consequence of uneven distribution of fossil fuel reserves.",
+            "Identify a factor that determines whether a location is suitable for wind energy.",
+            "Propose one way a country with few fossil fuel reserves could meet its energy needs, and explain how it would work."
+          ]
+        },
+        {
+          id: "6.5", name: "Fossil Fuels", w: 5,
+          kw: ["fossil fuel", "coal", "oil", "petroleum", "natural gas", "fracking", "hydraulic fracturing", "tar sands", "oil sands", "crude oil", "coal-fired", "power plant", "combustion", "methane leak", "steam turbine"],
+          concepts: [
+            "Power plant: fuel burned to heat water, steam turns turbine, turbine spins generator",
+            "Fracking: pros (natural gas, less CO2 than coal) and cons (groundwater contamination, methane leaks, earthquakes, water use)",
+            "Coal combustion: CO2, SO2, NOx, PM, mercury, fly ash",
+            "Oil spills, tar sands extraction impacts"
+          ],
+          scenario: "A utility company is debating whether to replace an old coal-fired power plant with a natural gas plant supplied by hydraulic fracturing.",
+          parts: [
+            "Describe how electricity is generated in a coal-fired power plant.",
+            "Identify one environmental advantage of natural gas compared with coal.",
+            "Describe one environmental concern associated with hydraulic fracturing.",
+            "Identify one air pollutant released by burning coal and describe its effect on human health or the environment.",
+            "Propose one solution to reduce the environmental impacts of fossil fuel use, and explain how it would work."
+          ]
+        },
+        {
+          id: "6.6", name: "Nuclear Power", w: 4,
+          kw: ["nuclear", "uranium", "fission", "radioactive", "half-life", "half life", "nuclear waste", "chernobyl", "fukushima", "three mile island", "meltdown", "control rod", "radiation"],
+          concepts: [
+            "Fission of U-235 releases heat to make steam; no CO2 emitted during operation",
+            "Drawbacks: radioactive waste storage, thermal pollution, meltdown risk, mining impacts",
+            "Half-life calculations",
+            "Accidents: Three Mile Island, Chernobyl, Fukushima"
+          ],
+          scenario: "A country is considering building nuclear power plants to reduce its greenhouse gas emissions.",
+          parts: [
+            "Describe how electricity is generated in a nuclear power plant.",
+            "Identify one environmental advantage of nuclear power over coal.",
+            "Describe one challenge associated with long-term storage of nuclear waste.",
+            "A radioactive isotope has a half-life of 30 years. Calculate how much of a 1,000 kg sample remains after 120 years. Show your work.",
+            "Propose one solution for the long-term storage of nuclear waste, and explain how it would protect people and the environment."
+          ],
+          calc: "Remaining = initial x (1/2)^(time/half-life)"
+        },
+        {
+          id: "6.7", name: "Energy from Biomass", w: 3,
+          kw: ["biomass", "biofuel", "ethanol", "biodiesel", "methane digester", "biogas", "wood burning", "carbon neutral"],
+          concepts: [
+            "Biomass: wood, charcoal, animal waste; biofuels: ethanol (corn, sugarcane), biodiesel",
+            "Often called carbon neutral, but land clearing and production emit CO2",
+            "Corn ethanol competes with food crops and requires fertilizer, water",
+            "Burning biomass releases particulates, CO, NOx"
+          ],
+          scenario: "The U.S. requires gasoline to be blended with corn-based ethanol.",
+          parts: [
+            "Explain why biofuels are sometimes described as carbon neutral.",
+            "Describe one environmental drawback of producing ethanol from corn.",
+            "Identify one air pollutant released by burning biomass.",
+            "Explain how a methane digester can provide energy from animal waste.",
+            "Propose one way to produce biofuels with less environmental impact than corn ethanol, and explain how it would work."
+          ]
+        },
+        {
+          id: "6.8", name: "Solar Energy", w: 4,
+          kw: ["solar", "photovoltaic", "pv", "solar panel", "solar cell", "active solar", "passive solar", "concentrated solar", "solar farm"],
+          concepts: [
+            "Photovoltaic cells convert light directly to electricity",
+            "Passive (building design) vs. active (pumps/fans) solar heating",
+            "Concentrated solar uses mirrors to heat fluid and generate steam",
+            "Drawbacks: intermittency, mining of metals for panels, land use for solar farms"
+          ],
+          scenario: "A homeowner is considering installing photovoltaic solar panels that cost $15,000 and save $1,200 per year in electricity.",
+          parts: [
+            "Describe how photovoltaic cells generate electricity.",
+            "Calculate the payback period for the solar panels. Show your work.",
+            "Identify one environmental disadvantage of large-scale solar farms.",
+            "Describe one passive solar design feature that reduces a home's heating needs.",
+            "Propose one solution to the intermittency of solar energy, and explain how it would work."
+          ],
+          calc: "Payback = cost / savings per year"
+        },
+        {
+          id: "6.9", name: "Hydroelectric Power", w: 3,
+          kw: ["hydroelectric", "dam", "reservoir", "run-of-the-river", "tidal", "hydropower", "fish ladder", "sediment"],
+          concepts: [
+            "Moving water turns turbines; dams create reservoirs",
+            "Benefits: no air pollution during operation, flood control, reliable",
+            "Drawbacks: habitat flooding, blocks fish migration, sediment trapping, methane from reservoirs",
+            "Run-of-the-river and tidal alternatives"
+          ],
+          scenario: "A government plans to build a large hydroelectric dam on a river used by migrating salmon.",
+          parts: [
+            "Describe how a hydroelectric dam generates electricity.",
+            "Explain how dams affect migrating fish populations.",
+            "Describe one effect of a dam on sediment downstream.",
+            "Identify one benefit of hydroelectric power other than electricity generation.",
+            "Propose one way to reduce the impact of a hydroelectric dam on migrating fish, and explain how it would work."
+          ]
+        },
+        {
+          id: "6.10", name: "Geothermal Energy", w: 2,
+          kw: ["geothermal", "ground-source heat pump", "heat pump", "magma", "hot spring", "geyser"],
+          concepts: [
+            "Heat from Earth's interior (radioactive decay) creates steam to turn turbines",
+            "Only practical near plate boundaries/hot spots (Iceland)",
+            "Drawbacks: can release H2S, may deplete heat locally, expensive",
+            "Ground-source heat pumps work almost anywhere for heating/cooling"
+          ],
+          scenario: "Iceland generates much of its electricity and heating from geothermal energy.",
+          parts: [
+            "Describe how geothermal energy is used to produce electricity.",
+            "Explain why geothermal power plants are common in Iceland.",
+            "Describe one environmental drawback of geothermal energy.",
+            "Explain how a ground-source heat pump can reduce energy use for heating a home.",
+            "Propose one way a homeowner could use geothermal energy even in a region without volcanic activity, and explain how it would work."
+          ]
+        },
+        {
+          id: "6.11", name: "Hydrogen Fuel Cell", w: 2,
+          kw: ["hydrogen", "fuel cell", "electrolysis", "hydrogen fuel"],
+          concepts: [
+            "Fuel cell combines H2 and O2 to make electricity; only byproduct is water",
+            "Hydrogen production often uses natural gas or electricity (energy source matters)",
+            "Drawbacks: storage, infrastructure, cost",
+            "Electrolysis using renewable electricity produces 'green' hydrogen"
+          ],
+          scenario: "A city is considering replacing its diesel buses with hydrogen fuel cell buses.",
+          parts: [
+            "Describe how a hydrogen fuel cell produces electricity.",
+            "Identify the byproduct of a hydrogen fuel cell.",
+            "Explain why hydrogen fuel cells may not reduce greenhouse gas emissions depending on how hydrogen is produced.",
+            "Describe one challenge to widespread use of hydrogen fuel cells.",
+            "Propose one way to produce hydrogen fuel without generating greenhouse gas emissions, and explain how it would work."
+          ]
+        },
+        {
+          id: "6.12", name: "Wind Energy", w: 3,
+          kw: ["wind energy", "wind turbine", "wind farm", "offshore wind", "wind power"],
+          concepts: [
+            "Kinetic energy of wind turns turbine blades and a generator",
+            "Benefits: no emissions during operation, land below can be farmed",
+            "Drawbacks: intermittency, bird/bat deaths, noise, visual impact",
+            "Offshore wind is stronger and more consistent"
+          ],
+          scenario: "A rural county is considering leasing farmland for a 100-turbine wind farm.",
+          parts: [
+            "Describe how wind turbines generate electricity.",
+            "Identify one environmental drawback of wind farms.",
+            "Explain one economic benefit of wind farms to rural landowners.",
+            "Explain why wind energy must be paired with energy storage or other sources.",
+            "Propose one way to reduce bird and bat deaths at wind farms, and explain how it would work."
+          ]
+        },
+        {
+          id: "6.13", name: "Energy Conservation", w: 3,
+          kw: ["energy conservation", "energy efficiency", "led", "cfl", "insulation", "cafe standards", "fuel economy", "hybrid", "electric vehicle", "kwh", "kilowatt", "programmable thermostat"],
+          concepts: [
+            "Individual: LEDs, programmable thermostats, insulation, efficient appliances",
+            "Transportation: hybrids/EVs, CAFE standards, public transit",
+            "Energy calculations: watts x hours = Wh; kWh x cost",
+            "Energy efficiency reduces fossil fuel use and emissions"
+          ],
+          scenario: "A school replaces 500 incandescent bulbs (60 W) with LED bulbs (10 W). Each bulb is on 8 hours per day for 180 school days.",
+          parts: [
+            "Calculate the kilowatt-hours of electricity saved per year. Show your work.",
+            "If electricity costs $0.12 per kWh, calculate the money saved per year. Show your work.",
+            "Describe one other way the school could conserve energy.",
+            "Explain how energy conservation reduces air pollution.",
+            "Propose one policy that would increase energy conservation in transportation, and explain how it would work."
+          ],
+          calc: "kWh = watts x hours / 1000"
+        }
+      ]
+    }
+  ];
+
+  root.APES_KB = (root.APES_KB || []).concat(units);
+  if (typeof module !== "undefined" && module.exports) module.exports = units;
+})(typeof globalThis !== "undefined" ? globalThis : this);
+
+</script>
+<script>
+/*
+ * APES knowledge base — Units 7-9. See units-1-3.js for field meanings.
+ */
+(function (root) {
+  const units = [
+    {
+      id: 7,
+      name: "Atmospheric Pollution",
+      examWeight: "7-10%",
+      bigIdea: "Air pollutants come from human and natural sources and can be reduced with technology and policy.",
+      topics: [
+        {
+          id: "7.1", name: "Introduction to Air Pollution", w: 3,
+          kw: ["air pollution", "air pollutant", "primary pollutant", "secondary pollutant", "clean air act", "criteria pollutant", "sulfur dioxide", "so2", "nitrogen oxide", "nox", "carbon monoxide", "lead", "particulate"],
+          concepts: [
+            "Primary pollutants are emitted directly (CO, SO2, NOx, PM); secondary form in the atmosphere (ozone, acid rain)",
+            "Clean Air Act criteria pollutants: SO2, NOx, CO, PM, tropospheric O3, lead",
+            "Coal combustion releases SO2, mercury, PM; vehicles release NOx and CO",
+            "Natural sources: volcanoes, wildfires, lightning"
+          ],
+          scenario: "Air quality monitors in a large city record high levels of nitrogen oxides during rush hour.",
+          parts: [
+            "Distinguish between primary and secondary air pollutants, giving an example of each.",
+            "Identify one criteria pollutant regulated under the Clean Air Act and its major source.",
+            "Describe one human health effect of exposure to particulate matter.",
+            "Identify one natural source of air pollution.",
+            "Propose one regulation that would reduce emissions of a criteria air pollutant, and explain how it would work."
+          ]
+        },
+        {
+          id: "7.2", name: "Photochemical Smog", w: 4,
+          kw: ["photochemical smog", "smog", "tropospheric ozone", "ground-level ozone", "ground level ozone", "volatile organic compound", "voc", "sunlight", "brown smog"],
+          concepts: [
+            "NOx + VOCs + sunlight produce tropospheric ozone (photochemical smog)",
+            "Ozone peaks in the afternoon on hot, sunny days; NO2 peaks after morning rush hour",
+            "Health effects: respiratory irritation, asthma; damages plants",
+            "Reduction: fewer vehicles, catalytic converters, VOC limits"
+          ],
+          scenario: "A graph shows concentrations of NO, NO2, and ozone over a 24-hour period in Los Angeles.",
+          parts: [
+            "Identify the two primary pollutants needed to form photochemical smog.",
+            "Explain why ozone concentrations peak in the afternoon.",
+            "Describe one human health effect of tropospheric ozone.",
+            "Propose one method to reduce photochemical smog in urban areas."
+          ]
+        },
+        {
+          id: "7.3", name: "Thermal Inversion", w: 2,
+          kw: ["thermal inversion", "temperature inversion", "inversion layer", "warm air layer"],
+          concepts: [
+            "A warm layer of air traps cooler air (and pollutants) near the surface",
+            "Common in valleys and cities surrounded by mountains",
+            "Worsens smog and respiratory illness (London 1952, Donora 1948)",
+            "Normally temperature decreases with altitude in the troposphere"
+          ],
+          scenario: "A city located in a mountain valley experiences several days of severe air pollution during calm winter weather.",
+          parts: [
+            "Describe the atmospheric conditions that create a thermal inversion.",
+            "Explain how thermal inversions increase pollutant concentrations near the ground.",
+            "Explain why cities in valleys are more likely to experience thermal inversions.",
+            "Describe one human health effect associated with thermal inversion events.",
+            "Propose one action a valley city could take to reduce health impacts during thermal inversions, and explain how it would work."
+          ]
+        },
+        {
+          id: "7.4", name: "Atmospheric CO2 and Particulates", w: 2,
+          kw: ["particulate matter", "pm2.5", "pm10", "pm 2.5", "haze", "soot", "keeling curve"],
+          concepts: [
+            "PM2.5 penetrates deep into lungs; sources: combustion, construction, dust",
+            "Particulates scatter/absorb sunlight, causing haze",
+            "CO2 rising from fossil fuel combustion (Keeling Curve)",
+            "Natural vs. anthropogenic sources"
+          ],
+          scenario: "Wildfire smoke drifts hundreds of miles and causes hazy skies and poor air quality.",
+          parts: [
+            "Explain why PM2.5 is more harmful to human health than larger particles.",
+            "Identify one anthropogenic source of particulate matter.",
+            "Describe how particulates affect visibility and the amount of sunlight reaching Earth's surface.",
+            "Describe the trend shown by the Keeling Curve and explain its cause.",
+            "Propose one way to reduce particulate matter emissions in a city, and explain how it would work."
+          ]
+        },
+        {
+          id: "7.5", name: "Indoor Air Pollutants", w: 3,
+          kw: ["indoor air", "radon", "asbestos", "formaldehyde", "carbon monoxide", "mold", "sick building", "secondhand smoke"],
+          concepts: [
+            "Radon: from uranium decay in rock; causes lung cancer; test and ventilate",
+            "Developing countries: CO and PM from cooking with wood/dung/charcoal",
+            "Asbestos, formaldehyde (furniture/carpet), lead paint, mold, VOCs",
+            "Remediation: ventilation, detectors, removal"
+          ],
+          scenario: "A family in a newly built, well-insulated home develops headaches, and a test reveals elevated radon in the basement.",
+          parts: [
+            "Identify the natural source of radon gas.",
+            "Describe one human health effect of long-term radon exposure.",
+            "Identify one indoor air pollutant common in developing countries and its source.",
+            "Propose one method to reduce indoor air pollution in the home."
+          ]
+        },
+        {
+          id: "7.6", name: "Reduction of Air Pollutants", w: 4,
+          kw: ["catalytic converter", "scrubber", "electrostatic precipitator", "baghouse", "vapor recovery nozzle", "fluidized bed", "emission reduction", "low sulfur"],
+          concepts: [
+            "Catalytic converters reduce NOx, CO, and hydrocarbons from vehicles",
+            "Wet/dry scrubbers remove SO2; electrostatic precipitators and baghouse filters remove PM",
+            "Vapor recovery nozzles reduce VOCs; fluidized bed combustion lowers NOx/SO2",
+            "Policy: Clean Air Act, cap-and-trade, carpooling, mass transit"
+          ],
+          scenario: "A coal-fired power plant must reduce its emissions of sulfur dioxide and particulate matter to meet new regulations.",
+          parts: [
+            "Describe how a scrubber reduces sulfur dioxide emissions.",
+            "Describe one technology used to remove particulate matter from smokestack emissions.",
+            "Explain how a catalytic converter reduces air pollution from vehicles.",
+            "Describe one policy that could reduce air pollution from vehicles.",
+            "Propose one technology or policy to reduce air pollution from coal-fired power plants, and explain how it works."
+          ]
+        },
+        {
+          id: "7.7", name: "Acid Rain", w: 4,
+          kw: ["acid rain", "acid deposition", "sulfuric acid", "nitric acid", "acidification", "limestone", "buffer", "ph"],
+          concepts: [
+            "SO2 and NOx react with water to form sulfuric and nitric acid",
+            "Effects: lowers pH of lakes/soil, leaches nutrients, mobilizes aluminum, damages buildings",
+            "Limestone (CaCO3) bedrock buffers acidity",
+            "Clean Air Act and scrubbers have reduced acid rain in the U.S."
+          ],
+          scenario: "Lakes in the Adirondack Mountains downwind of Midwest coal plants have seen declines in fish populations.",
+          parts: [
+            "Identify one pollutant that contributes to acid deposition and its source.",
+            "Explain how acid rain affects aquatic organisms.",
+            "Explain why lakes on limestone bedrock are less affected by acid rain.",
+            "Propose one solution to reduce acid deposition and explain how it works."
+          ]
+        },
+        {
+          id: "7.8", name: "Noise Pollution", w: 1,
+          kw: ["noise pollution", "noise", "decibel", "sonar", "sound"],
+          concepts: [
+            "Noise causes physiological stress, hearing loss, disrupted communication",
+            "Wildlife: disrupts mating calls and migration; ship noise affects whales",
+            "Sources: transportation, construction, industry",
+            "Mitigation: barriers, regulations, quieter technology"
+          ],
+          scenario: "Increasing ship traffic in a coastal area overlaps with a whale migration route.",
+          parts: [
+            "Describe one effect of noise pollution on wildlife.",
+            "Identify one source of noise pollution in urban areas.",
+            "Describe one human health effect of chronic noise exposure.",
+            "Propose one method to reduce noise pollution."
+          ]
+        }
+      ]
+    },
+    {
+      id: 8,
+      name: "Aquatic and Terrestrial Pollution",
+      examWeight: "7-10%",
+      bigIdea: "Pollutants affect ecosystems and human health; waste can be reduced and treated.",
+      topics: [
+        {
+          id: "8.1", name: "Sources of Pollution", w: 2,
+          kw: ["point source", "nonpoint source", "non-point source", "pipe", "outfall"],
+          concepts: [
+            "Point source: single identifiable source (pipe, smokestack)",
+            "Nonpoint source: diffuse (agricultural and urban runoff) — harder to regulate",
+            "Clean Water Act and Safe Drinking Water Act",
+            "Classify sources correctly in a scenario"
+          ],
+          scenario: "A river receives discharge from a factory pipe and runoff from surrounding farms and suburbs.",
+          parts: [
+            "Distinguish between point and nonpoint source pollution, giving an example of each.",
+            "Explain why nonpoint source pollution is more difficult to regulate.",
+            "Identify one federal law that regulates water pollution in the United States.",
+            "Propose one method to reduce nonpoint source pollution from farms."
+          ]
+        },
+        {
+          id: "8.2", name: "Human Impacts on Ecosystems", w: 3,
+          kw: ["oil spill", "coral bleaching", "ocean dumping", "plastic", "microplastic", "dissolved oxygen", "dead zone", "pollution"],
+          concepts: [
+            "Organisms have ranges of tolerance for pollutants",
+            "Oil spills: coat feathers/fur, toxic to marine life; cleanup methods",
+            "Coral reefs harmed by sediment, warming, pollution",
+            "Plastics/microplastics are ingested by marine organisms"
+          ],
+          scenario: "An offshore oil rig explosion releases millions of barrels of oil into the Gulf of Mexico.",
+          parts: [
+            "Describe one effect of an oil spill on marine organisms.",
+            "Describe one method used to clean up oil spills.",
+            "Explain how plastic pollution affects marine wildlife.",
+            "Explain how increased sediment from runoff harms coral reefs.",
+            "Propose one solution to reduce plastic pollution in the ocean, and explain how it would work."
+          ]
+        },
+        {
+          id: "8.3", name: "Endocrine Disruptors", w: 2,
+          kw: ["endocrine disruptor", "endocrine", "hormone", "atrazine", "bpa", "bisphenol", "feminization"],
+          concepts: [
+            "Chemicals that mimic or block hormones (atrazine, BPA, DDT, some pharmaceuticals)",
+            "Effects: reproductive abnormalities, feminization of male fish/amphibians",
+            "Sources: pesticides, plastics, wastewater containing pharmaceuticals",
+            "Not removed by most sewage treatment plants"
+          ],
+          scenario: "Biologists find male frogs with female characteristics in ponds near cornfields treated with atrazine.",
+          parts: [
+            "Define an endocrine disruptor.",
+            "Describe one effect of endocrine disruptors on wildlife.",
+            "Identify one source of endocrine-disrupting chemicals in waterways.",
+            "Explain why endocrine disruptors can affect organisms at very low concentrations.",
+            "Propose one way to reduce the amount of endocrine disruptors entering waterways, and explain how it would work."
+          ]
+        },
+        {
+          id: "8.4", name: "Human Impacts on Wetlands and Mangroves", w: 2,
+          kw: ["mangrove", "wetland loss", "wetland", "marsh", "swamp", "storm surge"],
+          concepts: [
+            "Wetlands: water filtration, flood control, habitat, carbon storage",
+            "Threats: draining for development/agriculture, pollution, sea level rise",
+            "Mangroves protect coastlines from storm surge and erosion",
+            "Mangroves are cleared for shrimp aquaculture and development"
+          ],
+          scenario: "Mangrove forests along a tropical coastline are being cleared for shrimp farms.",
+          parts: [
+            "Describe one ecosystem service provided by mangrove forests.",
+            "Explain how the loss of coastal wetlands increases damage from storms.",
+            "Identify one human activity that destroys wetlands.",
+            "Explain how wetlands improve water quality.",
+            "Propose one strategy to protect or restore coastal wetlands or mangroves, and explain how it would work."
+          ]
+        },
+        {
+          id: "8.5", name: "Eutrophication", w: 5,
+          kw: ["eutrophication", "algal bloom", "algae bloom", "hypoxia", "hypoxic", "dead zone", "dissolved oxygen", "oligotrophic", "eutrophic", "cultural eutrophication", "nutrient runoff"],
+          concepts: [
+            "Nutrient (N, P) input -> algal bloom -> algae die -> decomposition by bacteria uses up DO -> hypoxia -> fish die-offs",
+            "Sources: fertilizer runoff, sewage, CAFO waste, detergents",
+            "Gulf of Mexico dead zone from Mississippi River watershed",
+            "Solutions: buffer strips, reduce fertilizer, wastewater treatment, wetlands restoration"
+          ],
+          scenario: "Each summer a large hypoxic dead zone forms in the Gulf of Mexico near the mouth of the Mississippi River.",
+          parts: [
+            "Describe the sequence of events that leads from nutrient runoff to a hypoxic dead zone.",
+            "Identify one source of the nutrients that cause cultural eutrophication.",
+            "Explain why dissolved oxygen levels drop after an algal bloom dies off.",
+            "Propose one solution to reduce eutrophication and explain how it works."
+          ]
+        },
+        {
+          id: "8.6", name: "Thermal Pollution", w: 3,
+          kw: ["thermal pollution", "thermal shock", "cooling water", "warm water discharge", "water temperature"],
+          concepts: [
+            "Heated water from power plants/industry lowers dissolved oxygen",
+            "Warm water holds less dissolved oxygen; increases metabolism and O2 demand",
+            "Thermal shock can kill organisms",
+            "Solutions: cooling towers, cooling ponds"
+          ],
+          scenario: "A nuclear power plant discharges warm water used for cooling into a nearby river.",
+          parts: [
+            "Explain why warmer water holds less dissolved oxygen.",
+            "Describe one effect of thermal pollution on aquatic organisms.",
+            "Identify one source of thermal pollution.",
+            "Propose one method power plants could use to reduce thermal pollution."
+          ]
+        },
+        {
+          id: "8.7", name: "Persistent Organic Pollutants (POPs)", w: 2,
+          kw: ["persistent organic pollutant", "pops", "pcb", "dioxin", "fat-soluble", "fat soluble", "stockholm convention"],
+          concepts: [
+            "Synthetic, carbon-based, fat-soluble, resist breakdown",
+            "Travel long distances via wind/water; accumulate in Arctic",
+            "Examples: DDT, PCBs, dioxins",
+            "Stockholm Convention bans/restricts POPs"
+          ],
+          scenario: "High concentrations of PCBs are found in Inuit people living in the Arctic, far from industrial sources.",
+          parts: [
+            "Identify two characteristics of persistent organic pollutants.",
+            "Explain how POPs can be found in regions far from where they were produced.",
+            "Explain why fat-soluble pollutants accumulate in organisms.",
+            "Describe one human health effect of exposure to POPs.",
+            "Propose one way to reduce human exposure to persistent organic pollutants, and explain how it would work."
+          ]
+        },
+        {
+          id: "8.8", name: "Bioaccumulation and Biomagnification", w: 4,
+          kw: ["bioaccumulation", "biomagnification", "mercury", "methylmercury", "ddt", "eggshell thinning", "ppm", "top predator", "bald eagle"],
+          concepts: [
+            "Bioaccumulation: buildup in an individual over its lifetime",
+            "Biomagnification: concentration increases at each higher trophic level",
+            "DDT caused eggshell thinning in raptors (bald eagle, osprey, peregrine)",
+            "Mercury from coal combustion -> methylmercury in fish (limit tuna/swordfish consumption)"
+          ],
+          scenario: "Mercury concentrations were measured in water (0.000003 ppm), zooplankton (0.04 ppm), small fish (0.5 ppm), and largemouth bass (2.5 ppm).",
+          parts: [
+            "Distinguish between bioaccumulation and biomagnification.",
+            "Calculate the factor by which mercury concentration increases from small fish to bass. Show your work.",
+            "Identify the primary anthropogenic source of mercury in aquatic ecosystems.",
+            "Explain how DDT affected populations of birds of prey.",
+            "Propose one action to reduce mercury in fish consumed by humans, and explain how it would work."
+          ],
+          calc: "Magnification factor = higher concentration / lower concentration"
+        },
+        {
+          id: "8.9", name: "Solid Waste Disposal", w: 4,
+          kw: ["solid waste", "landfill", "sanitary landfill", "leachate", "incineration", "incinerator", "e-waste", "municipal solid waste", "open dump", "ocean dumping"],
+          concepts: [
+            "Sanitary landfill: clay/plastic liner, leachate collection, methane capture, daily soil cover",
+            "Leachate can contaminate groundwater; landfills emit methane",
+            "Incineration reduces volume, generates energy, but releases air pollutants and toxic ash",
+            "E-waste contains heavy metals (lead, mercury, cadmium)"
+          ],
+          scenario: "A county's landfill will reach capacity in five years and officials are evaluating alternatives.",
+          parts: [
+            "Describe one design feature of a sanitary landfill and explain how it protects the environment.",
+            "Explain how landfills contribute to climate change.",
+            "Describe one advantage and one disadvantage of waste incineration.",
+            "Explain why electronic waste requires special disposal.",
+            "Propose one alternative to sending municipal solid waste to a landfill, and explain how it would work."
+          ]
+        },
+        {
+          id: "8.10", name: "Waste Reduction Methods", w: 3,
+          kw: ["recycling", "reduce reuse recycle", "composting", "compost", "waste reduction", "source reduction", "landfill mitigation", "waste-to-energy"],
+          concepts: [
+            "Reduce > reuse > recycle (waste hierarchy)",
+            "Composting reduces landfill volume and methane; produces soil amendment",
+            "Recycling saves energy and resources but requires energy and markets",
+            "Landfill methane can be captured for energy"
+          ],
+          scenario: "A high school produces large amounts of cafeteria food waste and single-use plastic every day.",
+          parts: [
+            "Explain why reducing waste is preferred over recycling.",
+            "Describe one benefit of composting food waste.",
+            "Describe one drawback of recycling.",
+            "Propose a plan for the school to reduce the volume of waste sent to the landfill."
+          ]
+        },
+        {
+          id: "8.11", name: "Sewage Treatment", w: 4,
+          kw: ["sewage treatment", "wastewater treatment", "primary treatment", "secondary treatment", "tertiary treatment", "septic", "sludge", "chlorination", "uv disinfection", "combined sewer overflow"],
+          concepts: [
+            "Primary: physical removal of solids (screens, settling)",
+            "Secondary: biological — bacteria break down organic matter (aeration)",
+            "Tertiary: chemical/ecological removal of N and P; disinfection with chlorine, UV, or ozone",
+            "Combined sewer overflows during storms; sludge disposal"
+          ],
+          scenario: "A city's aging wastewater treatment plant only performs primary treatment before discharging into a lake.",
+          parts: [
+            "Describe what occurs during primary sewage treatment.",
+            "Explain the role of bacteria in secondary treatment.",
+            "Explain why tertiary treatment is needed to prevent eutrophication.",
+            "Identify one method used to disinfect wastewater before release.",
+            "Propose one way to prevent untreated sewage from entering waterways during heavy storms, and explain how it would work."
+          ]
+        },
+        {
+          id: "8.12", name: "Lethal Dose 50% (LD50)", w: 3,
+          kw: ["ld50", "ld 50", "lethal dose", "toxicity", "toxic", "mg/kg"],
+          concepts: [
+            "LD50: dose that kills 50% of a test population",
+            "Lower LD50 = more toxic",
+            "Expressed in mg of substance per kg of body mass",
+            "Calculate lethal dose for a given body mass"
+          ],
+          scenario: "A pesticide has an LD50 of 50 mg/kg in rats.",
+          parts: [
+            "Define LD50.",
+            "Calculate the dose of the pesticide that would be lethal to 50 percent of a population of 0.25 kg rats. Show your work.",
+            "Identify which of two substances is more toxic based on their LD50 values and justify your answer.",
+            "Explain one limitation of using animal LD50 data to estimate toxicity in humans.",
+            "Propose one way to reduce the risk of accidental poisoning from a highly toxic pesticide, and explain how it would work."
+          ],
+          calc: "Dose = LD50 (mg/kg) x body mass (kg)"
+        },
+        {
+          id: "8.13", name: "Dose Response Curve", w: 3,
+          kw: ["dose response", "dose-response", "threshold", "ed50", "no observable effect", "toxicology"],
+          concepts: [
+            "Dose-response curve: x-axis dose, y-axis % population responding",
+            "Threshold dose: lowest dose with an observable effect",
+            "ED50: dose producing an effect in 50% of population",
+            "Read LD50/ED50 from a graph"
+          ],
+          scenario: "A dose-response curve shows the percentage of a test population of fish that died at different concentrations of a chemical.",
+          parts: [
+            "Using the graph, identify the LD50 of the chemical.",
+            "Identify the threshold dose and explain its meaning.",
+            "Describe the difference between ED50 and LD50.",
+            "Explain why results of dose-response studies may vary among individuals.",
+            "Propose one way regulators could use dose-response data to set safe exposure limits, and explain your reasoning."
+          ]
+        },
+        {
+          id: "8.14", name: "Pollution and Human Health", w: 2,
+          kw: ["human health", "dysentery", "mesothelioma", "respiratory", "asthma", "lead poisoning", "arsenic", "synergism"],
+          concepts: [
+            "Difficult to establish cause and effect (many variables)",
+            "Dysentery from untreated sewage; mesothelioma from asbestos",
+            "Lead exposure (old pipes, paint) causes neurological damage — Flint, MI",
+            "Synergism: combined effects greater than separate effects"
+          ],
+          scenario: "Residents of a city with aging lead pipes report elevated blood lead levels in children.",
+          parts: [
+            "Describe one human health effect of lead exposure.",
+            "Explain why it is difficult to establish a cause-and-effect relationship between a pollutant and a disease.",
+            "Identify the disease caused by inhaling asbestos fibers.",
+            "Propose one action a city could take to reduce lead exposure in drinking water."
+          ]
+        },
+        {
+          id: "8.15", name: "Pathogens and Infectious Diseases", w: 3,
+          kw: ["pathogen", "infectious disease", "malaria", "cholera", "tuberculosis", "west nile", "zika", "vector", "plague", "sars", "mers", "covid"],
+          concepts: [
+            "Pathogens: bacteria, viruses, parasites; vectors (mosquitoes) spread disease",
+            "Climate change expands vector ranges (malaria, dengue, West Nile, Zika)",
+            "Poverty, poor sanitation, and crowding increase disease (cholera, TB)",
+            "Know disease name + cause + transmission"
+          ],
+          scenario: "As temperatures rise, mosquitoes carrying malaria are found at higher elevations in East Africa.",
+          parts: [
+            "Explain how climate change can increase the spread of vector-borne diseases.",
+            "Identify one disease spread by contaminated water.",
+            "Describe one factor that makes developing countries more vulnerable to infectious disease.",
+            "Propose one method to reduce the spread of malaria."
+          ]
+        }
+      ]
+    },
+    {
+      id: 9,
+      name: "Global Change",
+      examWeight: "15-20%",
+      bigIdea: "Human activities are changing Earth's climate, atmosphere, oceans, and biodiversity.",
+      topics: [
+        {
+          id: "9.1", name: "Stratospheric Ozone Depletion", w: 3,
+          kw: ["ozone depletion", "ozone hole", "stratospheric ozone", "cfc", "cfcs", "chlorofluorocarbon", "uv radiation", "ultraviolet", "chlorine"],
+          concepts: [
+            "Stratospheric ozone absorbs UV-B and UV-C",
+            "CFCs release chlorine (UV breaks C-Cl bond); one Cl atom destroys many O3 molecules",
+            "Ozone hole over Antarctica (polar stratospheric clouds)",
+            "Effects: skin cancer, cataracts, crop damage, phytoplankton decline"
+          ],
+          scenario: "Satellite data show a large seasonal thinning of the ozone layer over Antarctica each spring.",
+          parts: [
+            "Identify the class of chemicals primarily responsible for stratospheric ozone depletion.",
+            "Describe how chlorine atoms destroy ozone molecules.",
+            "Describe one human health effect of increased UV radiation.",
+            "Explain why ozone depletion is most severe over Antarctica.",
+            "Propose one action individuals can take to protect themselves from increased UV radiation, and explain how it works."
+          ]
+        },
+        {
+          id: "9.2", name: "Reducing Ozone Depletion", w: 2,
+          kw: ["montreal protocol", "hcfc", "hfc", "ozone-depleting", "ozone recovery"],
+          concepts: [
+            "Montreal Protocol (1987) phased out CFCs — most successful environmental treaty",
+            "Replacements: HCFCs, HFCs (HFCs are potent greenhouse gases)",
+            "Ozone layer is slowly recovering",
+            "Kigali Amendment addresses HFCs"
+          ],
+          scenario: "Since the Montreal Protocol was signed, atmospheric CFC levels have declined.",
+          parts: [
+            "Identify the international agreement that phased out CFCs.",
+            "Explain why the ozone layer is recovering slowly even after CFCs were banned.",
+            "Describe one drawback of replacing CFCs with HFCs.",
+            "Identify one product that historically contained CFCs.",
+            "Propose one replacement for ozone-depleting chemicals that also limits climate impacts, and explain why it is better."
+          ]
+        },
+        {
+          id: "9.3", name: "The Greenhouse Effect", w: 4,
+          kw: ["greenhouse effect", "infrared", "greenhouse gas", "global warming potential", "gwp", "longwave", "heat trapping"],
+          concepts: [
+            "Sunlight (short-wave) passes through; Earth re-emits infrared (long-wave) absorbed by GHGs",
+            "Natural greenhouse effect keeps Earth habitable",
+            "Major GHGs: water vapor, CO2, CH4, N2O, CFCs/HFCs",
+            "Global warming potential: CH4 ~25x, N2O ~300x, CFCs thousands x CO2"
+          ],
+          scenario: "Without the natural greenhouse effect, Earth's average surface temperature would be about -18 degrees C.",
+          parts: [
+            "Describe how greenhouse gases trap heat in Earth's atmosphere.",
+            "Identify the greenhouse gas with the highest global warming potential among CO2, CH4, and N2O.",
+            "Explain why the natural greenhouse effect is necessary for life on Earth.",
+            "Identify one source of methane emissions.",
+            "Propose one way to reduce emissions of a greenhouse gas other than carbon dioxide, and explain how it would work."
+          ]
+        },
+        {
+          id: "9.4", name: "Increases in the Greenhouse Gases", w: 4,
+          kw: ["methane", "nitrous oxide", "co2 emissions", "carbon emissions", "anthropogenic", "ice core", "rice paddies", "ruminant", "permafrost melt"],
+          concepts: [
+            "CO2: fossil fuels, deforestation, cement; CH4: livestock, rice paddies, landfills, natural gas leaks, permafrost",
+            "N2O: fertilizer, manure, combustion",
+            "Ice cores show CO2 and temperature correlation over 800,000 years",
+            "Percent change calculations from CO2 data"
+          ],
+          scenario: "Atmospheric CO2 has risen from about 280 ppm before the Industrial Revolution to about 420 ppm today.",
+          parts: [
+            "Calculate the percent increase in atmospheric CO2 since pre-industrial times. Show your work.",
+            "Identify one agricultural source of methane.",
+            "Describe how ice cores are used to determine past atmospheric CO2 concentrations.",
+            "Identify one anthropogenic source of nitrous oxide.",
+            "Propose one agricultural practice that reduces methane or nitrous oxide emissions, and explain how it works."
+          ],
+          calc: "% change = (new - old) / old x 100"
+        },
+        {
+          id: "9.5", name: "Global Climate Change", w: 5,
+          kw: ["climate change", "global warming", "sea level rise", "sea-level rise", "glacier", "polar ice", "feedback loop", "positive feedback", "paris agreement", "kyoto", "carbon tax", "cap and trade", "carbon sequestration"],
+          concepts: [
+            "Effects: sea level rise (thermal expansion + melting land ice), glacier loss, extreme weather, shifting ranges",
+            "Positive feedbacks: albedo loss, permafrost methane release",
+            "Solutions: renewables, efficiency, carbon tax, cap-and-trade, reforestation, carbon capture",
+            "Paris Agreement and international efforts"
+          ],
+          scenario: "Average global surface temperature has increased by more than 1 degree C since 1880.",
+          parts: [
+            "Describe two causes of sea level rise associated with climate change.",
+            "Explain how melting permafrost creates a positive feedback loop.",
+            "Describe one effect of climate change on species distribution.",
+            "Propose one policy to reduce greenhouse gas emissions and explain how it would work."
+          ]
+        },
+        {
+          id: "9.6", name: "Ocean Warming", w: 3,
+          kw: ["ocean warming", "coral bleaching", "zooxanthellae", "warming ocean", "marine heatwave", "thermal expansion"],
+          concepts: [
+            "Oceans absorb most excess heat from global warming",
+            "Coral bleaching: corals expel zooxanthellae under heat stress",
+            "Species migrate poleward/deeper; habitat loss",
+            "Thermal expansion contributes to sea level rise"
+          ],
+          scenario: "Large sections of the Great Barrier Reef experienced mass bleaching during recent marine heatwaves.",
+          parts: [
+            "Describe the process of coral bleaching.",
+            "Explain how ocean warming contributes to sea level rise.",
+            "Describe one effect of ocean warming on marine species distribution.",
+            "Identify one ecosystem service lost when coral reefs die.",
+            "Propose one action to help coral reefs survive ocean warming, and explain how it would work."
+          ]
+        },
+        {
+          id: "9.7", name: "Ocean Acidification", w: 4,
+          kw: ["ocean acidification", "carbonic acid", "calcium carbonate", "shell", "carbonate", "acidification", "pteropod"],
+          concepts: [
+            "CO2 + H2O -> carbonic acid; lowers ocean pH",
+            "Less carbonate ion available for shell/skeleton building (calcium carbonate)",
+            "Harms corals, mollusks, plankton (base of food web)",
+            "Ocean pH has dropped from ~8.2 to ~8.1 (~30% increase in acidity, log scale)"
+          ],
+          scenario: "Oyster farmers in the Pacific Northwest report high mortality of oyster larvae.",
+          parts: [
+            "Describe the chemical process by which increased atmospheric CO2 lowers ocean pH.",
+            "Explain how ocean acidification affects organisms that build calcium carbonate shells.",
+            "Explain how a decline in shelled plankton could affect marine food webs.",
+            "Explain why a decrease of 0.1 pH units is significant.",
+            "Propose one solution to reduce ocean acidification, and explain how it would work."
+          ]
+        },
+        {
+          id: "9.8", name: "Invasive Species", w: 4,
+          kw: ["invasive species", "invasive", "non-native", "nonnative", "exotic species", "zebra mussel", "kudzu", "cane toad", "burmese python", "asian carp", "ballast water", "emerald ash borer", "lionfish"],
+          concepts: [
+            "Invasives are often generalists/r-selected with no natural predators",
+            "Outcompete natives, reduce biodiversity, cause economic damage",
+            "Examples: zebra mussels (ballast water), kudzu, cane toads, Burmese pythons, Asian carp, lionfish",
+            "Control: prevention (ballast rules), removal, biological control"
+          ],
+          scenario: "Zebra mussels, introduced to the Great Lakes in ship ballast water, have spread throughout the region.",
+          parts: [
+            "Describe one characteristic that allows invasive species to outcompete native species.",
+            "Explain how zebra mussels were introduced to the Great Lakes.",
+            "Describe one ecological or economic impact of an invasive species.",
+            "Propose one method to control the spread of invasive species."
+          ]
+        },
+        {
+          id: "9.9", name: "Endangered Species", w: 3,
+          kw: ["endangered species", "endangered", "threatened", "endangered species act", "cites", "poaching", "extinction", "wildlife refuge", "captive breeding"],
+          concepts: [
+            "Traits of vulnerable species: K-selected, specialists, small range, low genetic diversity",
+            "Endangered Species Act (1973) and CITES",
+            "Protection: habitat preservation, captive breeding, hunting bans, corridors",
+            "Causes: habitat loss, poaching, invasive species, climate change"
+          ],
+          scenario: "The population of a large cat species has declined by 90 percent due to habitat loss and poaching.",
+          parts: [
+            "Describe two characteristics that make a species more vulnerable to extinction.",
+            "Identify one law or treaty that protects endangered species.",
+            "Describe one strategy to protect an endangered species and explain how it helps.",
+            "Explain how habitat loss leads to population decline.",
+            "Propose one strategy to protect an endangered species, and explain how it would help the population recover."
+          ]
+        },
+        {
+          id: "9.10", name: "Human Impacts on Biodiversity", w: 4,
+          kw: ["hippco", "habitat loss", "habitat destruction", "biodiversity loss", "mass extinction", "sixth extinction", "wildlife corridor", "overharvesting", "fragmentation"],
+          concepts: [
+            "HIPPCO: Habitat loss, Invasive species, Population growth, Pollution, Climate change, Overexploitation",
+            "Habitat loss is the #1 cause of biodiversity loss",
+            "Solutions: protected areas, corridors, sustainable harvest, restoration",
+            "Current extinction rate far exceeds background rate"
+          ],
+          scenario: "Tropical rainforests are being converted to palm oil plantations in Southeast Asia, threatening orangutans.",
+          parts: [
+            "Identify the leading cause of biodiversity loss worldwide.",
+            "Explain how converting rainforest to palm oil plantations reduces biodiversity.",
+            "Describe how wildlife corridors help maintain biodiversity in fragmented habitats.",
+            "Propose one solution to reduce the loss of biodiversity and explain how it works."
+          ]
+        }
+      ]
+    }
+  ];
+
+  root.APES_KB = (root.APES_KB || []).concat(units);
+  if (typeof module !== "undefined" && module.exports) module.exports = units;
+})(typeof globalThis !== "undefined" ? globalThis : this);
+
+</script>
+<script>
+/*
+ * Study sources and FRQ skill tips.
+ * General sources apply to every unit; topic-specific links are generated
+ * by the engine as search links so they never go stale.
+ */
+(function (root) {
+  const resources = {
+    general: [
+      {
+        title: "College Board — AP Environmental Science Past FRQs (with scoring guidelines)",
+        url: "https://apcentral.collegeboard.org/courses/ap-environmental-science/exam/past-exam-questions",
+        why: "Real AP FRQs and rubrics. Teachers write unit-test FRQs modeled on these — practice with the scoring guidelines open."
+      },
+      {
+        title: "AP Classroom (Topic Questions & Progress Checks)",
+        url: "https://myap.collegeboard.org/",
+        why: "Unit Progress Check FRQs are often reused or adapted for unit tests. Ask Mrs. Davis which ones are unlocked."
+      },
+      {
+        title: "AP Environmental Science Course and Exam Description (CED)",
+        url: "https://apcentral.collegeboard.org/courses/ap-environmental-science",
+        why: "The official list of every topic and learning objective — what's in it can be tested."
+      },
+      {
+        title: "Khan Academy — AP/College Environmental Science",
+        url: "https://www.khanacademy.org/science/ap-college-environmental-science",
+        why: "Free videos and practice organized by the same 9 CED units."
+      },
+      {
+        title: "Bozeman Science — AP Environmental Science videos",
+        url: "https://www.bozemanscience.com/ap-environmental-science",
+        why: "Short concept videos by an experienced AP science teacher."
+      },
+      {
+        title: "AP Environmental Science YouTube review (Jordan Dickinson)",
+        url: "https://www.youtube.com/results?search_query=Jordan+Dickinson+APES",
+        why: "Topic-by-topic CED review videos with FRQ practice walkthroughs."
+      }
+    ],
+
+    // Skill tips matched to the FRQ task verbs the College Board uses.
+    verbTips: {
+      identify: "Identify = a short, specific answer (a word or phrase). No explanation needed, but don't list several — only the first answer is scored.",
+      describe: "Describe = give the relevant characteristics. One or two complete sentences with specifics, not just a term.",
+      explain: "Explain = HOW or WHY. Use a cause -> effect chain: 'X happens, which causes Y, which leads to Z.'",
+      justify: "Justify = back your claim with evidence from the data or stimulus. Quote the number or trend.",
+      calculate: "Calculate = show the setup with units on every number, then box the final answer with units.",
+      propose: "Propose a solution = name a specific solution AND explain how it reduces the problem. Vague answers ('regulate it') lose points.",
+      compare: "Compare = state how both things are similar or different in the same sentence ('A has more ___ than B because...').",
+      predict: "Predict = state the outcome AND give a reason (often 'because...').",
+      design: "Design an investigation = state hypothesis, independent variable, dependent variable, control group, and a constant (controlled variable)."
+    },
+
+    generalTips: [
+      "Answer in the order asked and label each part (a), (b)(i), etc. — graders look for the label.",
+      "Never say 'pollution' alone — name the pollutant (e.g., 'NOx', 'nitrate runoff').",
+      "Don't use 'it' or 'they' — name the thing. Graders can't award points for vague pronouns.",
+      "If a question asks for ONE, give exactly one. Extra answers that are wrong can cancel a right one.",
+      "For environmental problems, always connect to an effect on an organism, ecosystem, or human health.",
+      "Calculator rules: show every step and include units. Partial credit lives in the setup.",
+      "No calculator on some sections in class — practice moving decimals and scientific notation by hand."
+    ],
+
+    // Typical APES math for each unit, used in the study plan.
+    mathByUnit: {
+      1: ["10% rule energy transfer between trophic levels", "NPP = GPP - respiration", "Percent change"],
+      2: ["Species richness / evenness from data tables", "Percent change in population or habitat area"],
+      3: ["Growth rate % = (CBR - CDR) / 10", "Rule of 70 doubling time", "Population change = (B + I) - (D + E)"],
+      4: ["Soil texture triangle percentages", "Rate = distance / time (plate movement)", "Percent composition"],
+      5: ["Irrigation efficiency (water applied = need / efficiency)", "Ecological footprint ratios", "Unit conversions (gallons, liters, acres, hectares)"],
+      6: ["kWh = W x h / 1000 and cost per kWh", "Payback period = cost / annual savings", "Half-life", "Efficiency % = useful output / input x 100"],
+      7: ["Percent reduction in emissions", "Converting ppm and ppb", "Emissions per unit of energy"],
+      8: ["LD50 dose = mg/kg x body mass", "Biomagnification factor", "Landfill volume and waste per capita"],
+      9: ["Percent change in CO2 (ppm)", "Rate of sea level rise", "Carbon footprint / emissions totals"]
+    }
+  };
+
+  root.APES_RESOURCES = resources;
+  if (typeof module !== "undefined" && module.exports) module.exports = resources;
+})(typeof globalThis !== "undefined" ? globalThis : this);
+
+</script>
+<script>
+/*
+ * APES FRQ prediction engine.
+ *
+ * How a prediction is made for the chosen unit:
+ *   1. Parse the pasted FRQs into individual questions and parts.
+ *   2. Map each question onto CED topics by keyword matching, and record the
+ *      teacher's style (task verbs, number of parts, calculations, FRQ type).
+ *   3. Score every topic in the unit by blending
+ *        - prior:   how often the topic shows up on AP / teacher FRQs (KB `w`)
+ *        - teacher: how heavily the teacher's own FRQs hit the topic
+ *        - gap:     topics the teacher has NOT tested yet (rotation)
+ *      The "reuse vs. rotate" setting shifts weight between teacher and gap.
+ *   4. Convert scores into a chance each topic appears on the test, then build
+ *      full predicted FRQs in the teacher's style anchored on the top topics.
+ */
+(function (root) {
+  "use strict";
+
+  const STOPWORDS = new Set(("a an and are as at be by can for from has have how in is it its of on or " +
+    "that the their this to was were what when which who why will with your you one two each " +
+    "describe explain identify justify calculate propose using use shown show work part based").split(" "));
+
+  const VERBS = ["identify", "describe", "explain", "justify", "calculate", "propose", "compare", "predict", "design"];
+
+  const FRQ_TYPES = {
+    design: "Design an Investigation",
+    problem: "Analyze a Problem & Propose a Solution",
+    calc: "Analyze a Problem with Calculations"
+  };
+
+  // ---------- small utilities ----------
+
+  function normalize(text) {
+    return (" " + String(text || "").toLowerCase()
+      .replace(/[‘’]/g, "'")
+      .replace(/ñ/g, "n")
+      .replace(/[^a-z0-9.%'+\- ]+/g, " ")
+      .replace(/\s+/g, " ") + " ");
+  }
+
+  function stem(word) {
+    if (word.length > 5 && word.endsWith("ing")) return word.slice(0, -3);
+    if (word.length > 4 && word.endsWith("ies")) return word.slice(0, -3) + "y";
+    if (word.length > 4 && word.endsWith("es") && !word.endsWith("ses")) return word.slice(0, -2);
+    if (word.length > 3 && word.endsWith("s") && !word.endsWith("ss")) return word.slice(0, -1);
+    if (word.length > 5 && word.endsWith("ed")) return word.slice(0, -2);
+    return word;
+  }
+
+  function tokens(text) {
+    return normalize(text).split(" ")
+      .map(w => w.replace(/^[.'+\-]+|[.'+\-]+$/g, ""))
+      .filter(w => w.length > 2 && !STOPWORDS.has(w))
+      .map(stem);
+  }
+
+  // Deterministic PRNG so the same input always yields the same prediction.
+  function hashString(s) {
+    let h = 2166136261;
+    for (let i = 0; i < s.length; i++) {
+      h ^= s.charCodeAt(i);
+      h = Math.imul(h, 16777619);
+    }
+    return h >>> 0;
+  }
+
+  function rng(seed) {
+    let a = seed || 1;
+    return function () {
+      a = (a + 0x6D2B79F5) | 0;
+      let t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  function cosine(a, b) {
+    let dot = 0, na = 0, nb = 0;
+    for (const k in a) { na += a[k] * a[k]; if (b[k]) dot += a[k] * b[k]; }
+    for (const k in b) nb += b[k] * b[k];
+    return na && nb ? dot / Math.sqrt(na * nb) : 0;
+  }
+
+  function vector(text) {
+    const v = {};
+    for (const t of tokens(text)) v[t] = (v[t] || 0) + 1;
+    return v;
+  }
+
+  function clamp(x, lo, hi) { return Math.max(lo, Math.min(hi, x)); }
+
+  // ---------- parsing ----------
+
+  const QUESTION_START = /^\s*(?:(?:frq|question|q|problem)\s*#?\s*\d+\b|\d{1,2}\s*[.)]\s+\S|-{3,}\s*$|={3,}\s*$)/i;
+  const PART_LINE = /^\s*\(?([a-hA-H]|i{1,3}|iv|v|vi{0,3})\s*[).:]\s+\S/;
+  const INLINE_PART = /(?:^|\s)\(([a-h])\)\s/g;
+
+  /** Split pasted text into separate FRQs. */
+  function splitFRQs(text) {
+    const lines = String(text || "").replace(/\r/g, "").split("\n");
+    const blocks = [];
+    let current = [];
+    for (const line of lines) {
+      if (QUESTION_START.test(line) && current.join("").trim()) {
+        blocks.push(current.join("\n"));
+        current = [];
+      }
+      if (/^\s*(?:-{3,}|={3,})\s*$/.test(line)) continue;
+      current.push(line);
+    }
+    if (current.join("").trim()) blocks.push(current.join("\n"));
+
+    // No explicit numbering: fall back to splitting on 2+ blank lines.
+    if (blocks.length === 1) {
+      const byBlank = blocks[0].split(/\n\s*\n\s*\n+/).filter(b => b.trim().length > 40);
+      if (byBlank.length > 1) return byBlank.map(b => b.trim());
+    }
+    return blocks.map(b => b.trim()).filter(b => b.length > 15);
+  }
+
+  function countParts(text) {
+    const lines = text.split("\n");
+    let n = 0;
+    const seen = new Set();
+    for (const l of lines) {
+      const m = l.match(PART_LINE);
+      if (m && /^[a-h]$/i.test(m[1])) { seen.add(m[1].toLowerCase()); n++; }
+    }
+    let m;
+    INLINE_PART.lastIndex = 0;
+    while ((m = INLINE_PART.exec(text))) seen.add(m[1]);
+    return Math.max(seen.size, n ? seen.size : 0);
+  }
+
+  function detectVerbs(text) {
+    const t = normalize(text);
+    const counts = {};
+    for (const v of VERBS) {
+      const re = new RegExp("\\b" + v + "(?:s|d|ed|ing)?\\b", "g");
+      const c = (t.match(re) || []).length;
+      if (c) counts[v] = c;
+    }
+    if (/\b(propose|suggest|recommend)\b.{0,40}\bsolution/.test(t)) counts.propose = (counts.propose || 0) + 1;
+    if (/\bshow (?:your|all) work\b/.test(t)) counts.calculate = (counts.calculate || 0) + 1;
+    return counts;
+  }
+
+  function detectCalc(text) {
+    const t = normalize(text);
+    const numbers = (t.match(/\b\d[\d,]*(?:\.\d+)?\b/g) || []).length;
+    const calcWords = /\b(calculate|show your work|show all work|percent change|per capita|kwh|kilowatt|doubling time|half-life|half life|ppm|mg\/kg|how many|how much)\b/.test(t);
+    return calcWords || numbers >= 4;
+  }
+
+  function detectType(text, hasCalc) {
+    const t = normalize(text);
+    if (/\b(hypothesis|independent variable|dependent variable|control group|controlled variable|experiment|investigation|design)\b/.test(t)) return "design";
+    if (hasCalc && /\b(calculate|show your work|show all work)\b/.test(t)) return "calc";
+    return "problem";
+  }
+
+  // ---------- engine ----------
+
+  function createPredictor(kb, resources) {
+    kb = kb || root.APES_KB || [];
+    resources = resources || root.APES_RESOURCES || { general: [], verbTips: {}, generalTips: [], mathByUnit: {} };
+
+    // Pre-compute keyword data for every topic.
+    const topicIndex = [];
+    for (const unit of kb) {
+      for (const topic of unit.topics) {
+        const phrases = topic.kw.map(k => normalize(k).trim()).filter(Boolean);
+        const nameTokens = tokens(topic.name);
+        topicIndex.push({ unit, topic, phrases, nameTokens });
+      }
+    }
+
+    function getUnit(id) {
+      return kb.find(u => String(u.id) === String(id));
+    }
+
+    /** Score how strongly a piece of text is about each topic. */
+    function topicHits(text) {
+      const norm = normalize(text);
+      const toks = new Set(tokens(text));
+      const hits = [];
+      for (const entry of topicIndex) {
+        let score = 0;
+        const matched = [];
+        for (const p of entry.phrases) {
+          const re = new RegExp("(^|[^a-z0-9])" + p.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "(s|es)?(?=[^a-z0-9]|$)", "g");
+          const c = (norm.match(re) || []).length;
+          if (c) {
+            const wordCount = p.split(" ").length;
+            score += Math.min(c, 3) * (1 + 0.6 * (wordCount - 1));
+            matched.push(p);
+          }
+        }
+        // Words from the topic name only strengthen a topic that already matched a keyword.
+        if (score > 0) for (const nt of entry.nameTokens) if (toks.has(nt) && nt.length > 4) score += 0.3;
+        if (score > 0) hits.push({ unitId: entry.unit.id, topicId: entry.topic.id, score, matched });
+      }
+      return hits.sort((a, b) => b.score - a.score);
+    }
+
+    /** Analyze each FRQ the student pasted. */
+    function analyze(text) {
+      const blocks = splitFRQs(text);
+      return blocks.map((body, i) => {
+        const hits = topicHits(body);
+        const unitScores = {};
+        for (const h of hits) unitScores[h.unitId] = (unitScores[h.unitId] || 0) + h.score;
+        const bestUnit = Object.keys(unitScores).sort((a, b) => unitScores[b] - unitScores[a])[0];
+        const hasCalc = detectCalc(body);
+        const firstLine = body.split("\n").find(l => l.trim()) || "";
+        return {
+          index: i + 1,
+          text: body,
+          title: firstLine.trim().slice(0, 110),
+          hits,
+          unitScores,
+          bestUnit: bestUnit ? Number(bestUnit) : null,
+          verbs: detectVerbs(body),
+          parts: countParts(body),
+          hasCalc,
+          type: detectType(body, hasCalc),
+          vec: vector(body)
+        };
+      });
+    }
+
+    /** Summarize the teacher's FRQ-writing style across all pasted FRQs. */
+    function teacherStyle(frqs) {
+      const verbTotals = {};
+      let parts = 0, partsN = 0, calcN = 0;
+      const typeCounts = { design: 0, problem: 0, calc: 0 };
+      for (const f of frqs) {
+        for (const v in f.verbs) verbTotals[v] = (verbTotals[v] || 0) + f.verbs[v];
+        if (f.parts) { parts += f.parts; partsN++; }
+        if (f.hasCalc) calcN++;
+        typeCounts[f.type]++;
+      }
+      const topVerbs = Object.keys(verbTotals).sort((a, b) => verbTotals[b] - verbTotals[a]);
+      return {
+        verbTotals,
+        topVerbs,
+        avgParts: partsN ? Math.round(parts / partsN) : 4,
+        calcRate: frqs.length ? calcN / frqs.length : 0.5,
+        typeCounts,
+        n: frqs.length
+      };
+    }
+
+    /**
+     * Main entry point.
+     * options: { unitId, numFRQs (questions on the test), reuse (0..1: 0 = teacher
+     * rotates to new topics, 1 = teacher reuses topics), extraCandidates }
+     */
+    function predict(text, options) {
+      options = options || {};
+      const unit = getUnit(options.unitId);
+      if (!unit) throw new Error("Unknown unit: " + options.unitId);
+
+      const numFRQs = clamp(Number(options.numFRQs) || 3, 1, 6);
+      const reuse = options.reuse == null ? 0.6 : clamp(Number(options.reuse), 0, 1);
+      const frqs = analyze(text);
+      const style = teacherStyle(frqs);
+      const random = rng(hashString(String(text) + "|" + unit.id + "|" + numFRQs + "|" + reuse));
+
+      // Which pasted FRQs relate to this unit?
+      const relevant = frqs.filter(f => f.unitScores[unit.id] > 0);
+      const offUnit = frqs.filter(f => f.bestUnit && f.bestUnit !== unit.id);
+
+      // Teacher signal per topic (only counting hits within this unit).
+      const teacherRaw = {};
+      for (const f of frqs) {
+        const unitHits = f.hits.filter(h => h.unitId === unit.id);
+        const total = unitHits.reduce((s, h) => s + h.score, 0) || 1;
+        for (const h of unitHits) teacherRaw[h.topicId] = (teacherRaw[h.topicId] || 0) + h.score / total;
+      }
+      const teacherMax = Math.max(0, ...Object.values(teacherRaw));
+      const hasTeacherData = teacherMax > 0;
+
+      // Cross-unit connections: topics from other units the teacher mixes in.
+      const crossRaw = {};
+      for (const f of relevant) {
+        for (const h of f.hits) {
+          if (h.unitId !== unit.id) crossRaw[h.topicId] = (crossRaw[h.topicId] || 0) + h.score;
+        }
+      }
+
+      const wSum = unit.topics.reduce((s, t) => s + t.w, 0);
+      const wMax = Math.max(...unit.topics.map(t => t.w));
+
+      // Blend weights. With no teacher data, rely on the prior entirely.
+      const W = hasTeacherData
+        ? { prior: 0.40, teacher: 0.60 * reuse, gap: 0.60 * (1 - reuse) * 0.55 }
+        : { prior: 1, teacher: 0, gap: 0 };
+
+      const scored = unit.topics.map(topic => {
+        const prior = (topic.w + (topic.calc ? 0.25 : 0)) / (wMax + 0.25);
+        const teacher = hasTeacherData ? (teacherRaw[topic.id] || 0) / teacherMax : 0;
+        const gap = hasTeacherData && !teacherRaw[topic.id] ? prior : 0;
+        const score = W.prior * prior + W.teacher * teacher + W.gap * gap;
+        const reasons = [];
+        if (topic.w >= 4) reasons.push("frequently tested on AP FRQs");
+        else if (topic.w === 3) reasons.push("regularly tested on AP FRQs");
+        if (teacher >= 0.5) reasons.push("heavily featured in your teacher's FRQs");
+        else if (teacher > 0) reasons.push("appears in your teacher's FRQs");
+        if (gap && reuse < 0.5 && topic.w >= 3) reasons.push("core topic not yet tested — likely rotation pick");
+        if (topic.calc) reasons.push("has a standard calculation (" + topic.calc + ")");
+        return { topic, prior, teacher, gap, score, reasons };
+      });
+
+      // Convert to probability of appearing in at least one FRQ part.
+      // Each FRQ touches ~2-3 topics, so the test samples roughly numFRQs*2.5 topic slots.
+      const scoreSum = scored.reduce((s, x) => s + x.score, 0) || 1;
+      const slots = numFRQs * 2.5;
+      for (const s of scored) {
+        const share = s.score / scoreSum;
+        s.probability = Math.round(clamp(1 - Math.pow(1 - share, slots), 0.03, 0.97) * 100);
+      }
+      scored.sort((a, b) => b.score - a.score || b.topic.w - a.topic.w);
+
+      const predicted = buildPredictedFRQs(unit, scored, style, frqs, numFRQs, options.extraCandidates == null ? 2 : options.extraCandidates, random);
+      const studyPlan = buildStudyPlan(unit, scored, style, crossRaw);
+
+      return {
+        unit,
+        numFRQs,
+        reuse,
+        frqs,
+        relevantCount: relevant.length,
+        offUnit: offUnit.map(f => ({ index: f.index, unitId: f.bestUnit, title: f.title })),
+        style,
+        hasTeacherData,
+        topics: scored,
+        predicted,
+        studyPlan,
+        sources: buildSources(unit, scored),
+        tips: buildTips(style)
+      };
+    }
+
+    function pickParts(topic, style, count, random) {
+      // Prefer prompts that use the teacher's favorite task verbs.
+      const verbRank = {};
+      style.topVerbs.forEach((v, i) => { verbRank[v] = style.topVerbs.length - i; });
+      const ranked = topic.parts.map((p, i) => {
+        const first = normalize(p).trim().split(" ")[0];
+        const verb = VERBS.find(v => first.startsWith(v)) || "";
+        return { p, i, score: (verbRank[verb] || 0) + random() * 1.5 };
+      }).sort((a, b) => b.score - a.score);
+      return ranked.slice(0, count).sort((a, b) => a.i - b.i).map(x => x.p);
+    }
+
+    // First part in `candidates` (topic order) matching `re`, skipping texts already used on the test.
+    function borrowPart(anchor, candidates, re, used) {
+      for (const c of [anchor].concat(candidates)) {
+        if (!c) continue;
+        const text = c.topic.parts.find(p => re.test(p) && !used.has(p));
+        if (text) return { text, context: c === anchor ? null : c.topic.scenario };
+      }
+      return null;
+    }
+
+    function designPart(topic) {
+      return "Design an experiment to investigate a factor related to " + topic.name.toLowerCase() +
+        ". Identify the hypothesis, the independent variable, the dependent variable, a control, and one variable that should be held constant.";
+    }
+
+    function buildPredictedFRQs(unit, scored, style, frqs, numFRQs, extra, random) {
+      const total = numFRQs + extra;
+      const anchors = scored.slice(0, total);
+
+      // Mirror the teacher's mix of FRQ types; default to the AP exam pattern.
+      const typeOrder = [];
+      if (style.n) {
+        const tc = style.typeCounts;
+        const order = Object.keys(tc).filter(k => tc[k] > 0).sort((a, b) => tc[b] - tc[a]);
+        for (let i = 0; i < total; i++) typeOrder.push(order[i % order.length]);
+      } else {
+        const ap = ["problem", "calc", "design"];
+        for (let i = 0; i < total; i++) typeOrder.push(ap[i % ap.length]);
+      }
+
+      const partsWanted = clamp(style.avgParts || 4, 3, 6);
+      const letters = "abcdefgh";
+
+      const usedParts = new Set();
+      const partnerUses = {};
+      return anchors.map((anchor, i) => {
+        // Pair the anchor with a related topic for a multi-concept FRQ (like the AP exam),
+        // preferring partners that haven't been used yet so the set covers more topics.
+        const pool = scored.filter(s => s !== anchor).slice(0, 6);
+        pool.sort((x, y) => (partnerUses[x.topic.id] || 0) - (partnerUses[y.topic.id] || 0) || random() - 0.5);
+        const partner = pool[0] || null;
+        if (partner) partnerUses[partner.topic.id] = (partnerUses[partner.topic.id] || 0) + 1;
+
+        // The part that makes this FRQ its type (calculation, design, or solution).
+        let type = typeOrder[i];
+        let required = null;
+        if (type === "calc") {
+          required = borrowPart(anchor, [partner].concat(scored), /calculate/i, usedParts);
+          if (!required) type = "problem";
+        }
+        if (type === "design") required = { text: designPart(anchor.topic), context: null };
+        if (type === "problem") {
+          required = borrowPart(anchor, [partner].concat(scored), /propose/i, usedParts) || {
+            text: "Propose one solution to an environmental or human problem described in this scenario, and explain how the solution would work.",
+            context: null
+          };
+        }
+
+        const parts = [];
+        const has = text => parts.some(p => p.text === text) || (required && required.text === text);
+        const room = partsWanted - (required ? 1 : 0);
+        for (const text of pickParts(anchor.topic, style, Math.max(2, room - (partner ? 1 : 0)), random)) {
+          if (!has(text)) parts.push({ text, context: null });
+        }
+        if (partner) {
+          const options = pickParts(partner.topic, style, partner.topic.parts.length, random).filter(t => !has(t) && !/propose/i.test(t));
+          const extra = options.find(t => !usedParts.has(t) && !/calculate/i.test(t)) || options.find(t => !usedParts.has(t)) || options[0];
+          if (extra) parts.push({ text: extra, context: partner.topic.scenario });
+        }
+        // Top up from the anchor topic so every FRQ has a full set of parts.
+        for (const text of anchor.topic.parts) {
+          if (parts.length >= room) break;
+          if (!has(text)) parts.push({ text, context: null });
+        }
+        if (required) {
+          if (type === "design") parts.unshift(required);
+          else if (type === "calc") parts.splice(Math.min(1, parts.length), 0, required);
+          else parts.push(required);
+        }
+        for (const p of parts) usedParts.add(p.text);
+
+        // Only show a borrowed scenario once.
+        const shown = new Set([anchor.topic.scenario]);
+        for (const p of parts) {
+          if (p.context && shown.has(p.context)) p.context = null;
+          else if (p.context) shown.add(p.context);
+        }
+
+        const frqText = anchor.topic.scenario + "\n" + parts.map(p => (p.context || "") + " " + p.text).join("\n");
+        let resembles = null;
+        if (frqs.length) {
+          const v = vector(frqText);
+          const best = frqs.map(f => ({ f, sim: cosine(v, f.vec) })).sort((a, b) => b.sim - a.sim)[0];
+          if (best && best.sim > 0.12) resembles = { index: best.f.index, title: best.f.title, similarity: Math.round(best.sim * 100) };
+        }
+
+        const likelihood = Math.round(clamp(anchor.probability * (i < numFRQs ? 1 : 0.8), 5, 95));
+        return {
+          rank: i + 1,
+          isCore: i < numFRQs,
+          type,
+          typeLabel: FRQ_TYPES[type],
+          anchor: { id: anchor.topic.id, name: anchor.topic.name },
+          partner: partner ? { id: partner.topic.id, name: partner.topic.name } : null,
+          scenario: anchor.topic.scenario,
+          parts: parts.map((p, j) => ({ letter: letters[j], text: p.text, context: p.context })),
+          likelihood,
+          reasons: anchor.reasons,
+          resembles
+        };
+      });
+    }
+
+    function buildStudyPlan(unit, scored, style, crossRaw) {
+      const tiers = scored.map((s, i) => {
+        let tier;
+        if (s.probability >= 60 || i < 3) tier = "Must know";
+        else if (s.probability >= 35) tier = "Should know";
+        else tier = "Quick review";
+        return {
+          id: s.topic.id,
+          name: s.topic.name,
+          tier,
+          probability: s.probability,
+          concepts: s.topic.concepts,
+          vocab: s.topic.kw.slice(0, 8),
+          calc: s.topic.calc || null,
+          reasons: s.reasons
+        };
+      });
+
+      const cross = Object.keys(crossRaw).sort((a, b) => crossRaw[b] - crossRaw[a]).slice(0, 4).map(id => {
+        const entry = topicIndex.find(e => e.topic.id === id);
+        return { id, name: entry.topic.name, unitId: entry.unit.id };
+      });
+
+      const mustCount = tiers.filter(t => t.tier === "Must know").length;
+      const schedule = [
+        "Day 1: Learn the " + mustCount + " 'Must know' topics — read the concepts, then write each vocab term in a sentence.",
+        "Day 2: Do the predicted FRQs (Most likely FRQs tab) under timed conditions (about 20 min each) without notes.",
+        "Day 3: Grade yourself against the College Board scoring guidelines for similar past FRQs; redo any part you missed.",
+        "Day 4: Drill the unit math (" + (resources.mathByUnit[unit.id] || []).slice(0, 2).join("; ") + ") and the 'Should know' topics.",
+        "Night before: Skim 'Quick review' topics and re-read your corrected FRQs."
+      ];
+      return { tiers, math: resources.mathByUnit[unit.id] || [], cross, schedule };
+    }
+
+    function buildSources(unit, scored) {
+      const q = s => encodeURIComponent(s);
+      const topicLinks = scored.slice(0, 6).map(s => ({
+        topic: s.topic.id + " " + s.topic.name,
+        links: [
+          { title: "YouTube review", url: "https://www.youtube.com/results?search_query=" + q("APES " + s.topic.id + " " + s.topic.name) },
+          { title: "Khan Academy", url: "https://www.khanacademy.org/search?page_search_query=" + q(s.topic.name) },
+          { title: "Past AP FRQs on this topic", url: "https://www.google.com/search?q=" + q("AP Environmental Science FRQ \"" + s.topic.name + "\" site:apcentral.collegeboard.org") }
+        ]
+      }));
+      return { general: resources.general, topicLinks };
+    }
+
+    function buildTips(style) {
+      const verbs = style.topVerbs.length ? style.topVerbs : ["identify", "describe", "explain", "propose", "calculate"];
+      const verbTips = verbs.filter(v => resources.verbTips[v]).slice(0, 6).map(v => ({ verb: v, tip: resources.verbTips[v] }));
+      return { verbTips, general: resources.generalTips };
+    }
+
+    return { predict, analyze, splitFRQs, topicHits, getUnit, units: kb };
+  }
+
+  const api = { createPredictor, splitFRQs, normalize, tokens, FRQ_TYPES };
+  root.APESEngine = api;
+  if (typeof module !== "undefined" && module.exports) module.exports = api;
+})(typeof globalThis !== "undefined" ? globalThis : this);
+
+</script>
+<script>
+/* UI wiring for the APES FRQ Predictor. */
+(function () {
+  "use strict";
+
+  const engine = APESEngine.createPredictor(window.APES_KB, window.APES_RESOURCES);
+  const BANK_KEY = "apesFrqBank.v1";
+  const PREFS_KEY = "apesFrqPrefs.v1";
+
+  const $ = id => document.getElementById(id);
+  const els = {
+    unit: $("unit"), numFRQs: $("numFRQs"), reuse: $("reuse"), reuseLabel: $("reuseLabel"),
+    input: $("frqInput"), stats: $("inputStats"), status: $("status"), results: $("results"),
+    summary: $("summary")
+  };
+
+  const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+  // ---------- storage (browser-only, may be unavailable) ----------
+
+  function readJSON(key, fallback) {
+    try { return JSON.parse(localStorage.getItem(key)) || fallback; } catch (e) { return fallback; }
+  }
+  function writeJSON(key, value) {
+    try { localStorage.setItem(key, JSON.stringify(value)); return true; } catch (e) { return false; }
+  }
+
+  function setStatus(msg) {
+    els.status.textContent = msg;
+    clearTimeout(setStatus.t);
+    setStatus.t = setTimeout(() => { els.status.textContent = ""; }, 5000);
+  }
+
+  // ---------- setup ----------
+
+  for (const u of engine.units) {
+    const o = document.createElement("option");
+    o.value = u.id;
+    o.textContent = "Unit " + u.id + ": " + u.name + " (" + u.examWeight + ")";
+    els.unit.appendChild(o);
+  }
+
+  const prefs = readJSON(PREFS_KEY, {});
+  if (prefs.unit) els.unit.value = prefs.unit;
+  if (prefs.numFRQs) els.numFRQs.value = prefs.numFRQs;
+  if (prefs.reuse != null) els.reuse.value = prefs.reuse;
+
+  function savePrefs() {
+    writeJSON(PREFS_KEY, { unit: els.unit.value, numFRQs: els.numFRQs.value, reuse: els.reuse.value });
+  }
+
+  function updateReuseLabel() {
+    const v = Number(els.reuse.value);
+    els.reuseLabel.textContent = v < 30 ? "Rotates to new topics" : v < 45 ? "Leans toward new topics"
+      : v <= 55 ? "Balanced" : v <= 75 ? "Mostly reuses topics" : "Reuses the same questions";
+  }
+  updateReuseLabel();
+
+  function updateStats() {
+    const n = engine.splitFRQs(els.input.value).length;
+    els.stats.textContent = n
+      ? n + " FRQ" + (n === 1 ? "" : "s") + " detected."
+      : "No FRQs yet — you can still predict from AP exam trends.";
+  }
+
+  // ---------- rendering ----------
+
+  function tierClass(tier) {
+    return tier === "Must know" ? "must" : tier === "Should know" ? "should" : "review";
+  }
+
+  function renderSummary(r) {
+    const top3 = r.topics.slice(0, 3).map(t => esc(t.topic.id + " " + t.topic.name)).join(", ");
+    let basis;
+    if (!r.frqs.length) {
+      basis = "No FRQs pasted, so this prediction uses AP exam topic frequencies and the CED only. Paste Mrs. Davis's FRQs for a sharper prediction.";
+    } else if (!r.hasTeacherData) {
+      basis = "None of the " + r.frqs.length + " pasted FRQ(s) matched Unit " + r.unit.id + " topics, so this prediction leans on AP exam trends. Her question style (" +
+        r.style.avgParts + " parts, " + (r.style.topVerbs.slice(0, 3).join("/") || "mixed verbs") + ") was still applied.";
+    } else {
+      basis = "Based on " + r.frqs.length + " pasted FRQ(s) (" + r.relevantCount + " touch Unit " + r.unit.id +
+        "), AP exam topic frequencies, and her style: about " + r.style.avgParts + " parts per FRQ, favorite verbs " +
+        (r.style.topVerbs.slice(0, 3).map(v => "<b>" + esc(v) + "</b>").join(", ") || "n/a") +
+        ", calculations in " + Math.round(r.style.calcRate * 100) + "% of FRQs.";
+    }
+    let off = "";
+    if (r.offUnit.length) {
+      off = "<p class='hint'>Heads up: FRQ " + r.offUnit.map(o => "#" + o.index + " (looks like Unit " + o.unitId + ")").join(", ") +
+        " mostly match a different unit. Cross-unit topics still count, and every FRQ teaches the engine her style.</p>";
+    }
+    els.summary.innerHTML =
+      "<p><b>Unit " + r.unit.id + ": " + esc(r.unit.name) + "</b> — " + esc(r.unit.bigIdea) + "</p>" +
+      "<p>Top topics to expect: " + top3 + ".</p>" +
+      "<p class='hint'>" + basis + "</p>" + off;
+  }
+
+  function renderPredicted(r) {
+    const core = r.predicted.filter(p => p.isCore);
+    const backup = r.predicted.filter(p => !p.isCore);
+    const card = p => {
+      const parts = p.parts.map(part =>
+        "<li><span class='letter'>(" + part.letter + ")</span><span>" +
+        (part.context ? "<span class='context'>" + esc(part.context) + "</span>" : "") +
+        esc(part.text) + "</span></li>").join("");
+      const resembles = p.resembles
+        ? " Closest to your FRQ #" + p.resembles.index + " (" + p.resembles.similarity + "% similar)."
+        : "";
+      return "<article class='frq" + (p.isCore ? "" : " backup") + "'>" +
+        "<div class='frq-head'><div><h3>Predicted FRQ " + p.rank + ": " + esc(p.anchor.name) + "</h3>" +
+        "<p class='meta'>" + esc(p.typeLabel) + " · Topic " + esc(p.anchor.id) +
+        (p.partner ? " + " + esc(p.partner.id) + " " + esc(p.partner.name) : "") + "</p></div>" +
+        "<span class='pill'>" + p.likelihood + "% likely</span></div>" +
+        "<p class='scenario'>" + esc(p.scenario) + "</p><ol>" + parts + "</ol>" +
+        "<p class='why'>Why: " + esc(p.reasons.join("; ") || "core CED topic") + "." + esc(resembles) + "</p></article>";
+    };
+    $("tab-predicted").innerHTML =
+      "<p class='hint'>Practice these timed (~20 min each). Likelihood = chance this topic shows up on the test, not that the wording will match exactly.</p>" +
+      core.map(card).join("") +
+      (backup.length ? "<h3>Backup predictions (also worth practicing)</h3>" + backup.map(card).join("") : "");
+  }
+
+  function renderStudy(r) {
+    const plan = r.studyPlan;
+    const topics = plan.tiers.map(t =>
+      "<div class='topic'><div class='topic-head'><h4>" + esc(t.id + " " + t.name) + "</h4>" +
+      "<span><span class='pill " + tierClass(t.tier) + "'>" + esc(t.tier) + "</span> <b>" + t.probability + "%</b></span></div>" +
+      "<div class='bar' aria-hidden='true'><span style='width:" + t.probability + "%'></span></div>" +
+      "<ul>" + t.concepts.map(c => "<li>" + esc(c) + "</li>").join("") +
+      (t.calc ? "<li><b>Math:</b> " + esc(t.calc) + "</li>" : "") + "</ul>" +
+      "<div class='vocab'>" + t.vocab.map(v => "<span>" + esc(v) + "</span>").join("") + "</div></div>").join("");
+
+    const cross = plan.cross.length
+      ? "<div class='box'><h3>Cross-unit links she uses</h3><ul>" +
+        plan.cross.map(c => "<li>" + esc(c.id + " " + c.name) + " (Unit " + c.unitId + ")</li>").join("") + "</ul></div>"
+      : "";
+
+    $("tab-study").innerHTML =
+      "<div class='grid2'>" +
+      "<div class='box'><h3>4-day study plan</h3><ol>" + plan.schedule.map(s => "<li>" + esc(s) + "</li>").join("") + "</ol></div>" +
+      "<div class='box'><h3>Math to practice</h3><ul>" + plan.math.map(m => "<li>" + esc(m) + "</li>").join("") + "</ul></div>" +
+      "<div class='box'><h3>How to answer (based on her verbs)</h3><ul>" +
+      r.tips.verbTips.map(t => "<li><b>" + esc(t.verb) + ":</b> " + esc(t.tip.replace(/^[A-Za-z ]+= /, "")) + "</li>").join("") + "</ul></div>" +
+      cross + "</div>" +
+      "<h3>Topics ranked by likelihood</h3>" + topics +
+      "<div class='box'><h3>FRQ scoring tips</h3><ul>" + r.tips.general.map(t => "<li>" + esc(t) + "</li>").join("") + "</ul></div>";
+  }
+
+  function renderSources(r) {
+    const link = l => "<a href='" + esc(l.url) + "' target='_blank' rel='noopener noreferrer'>" + esc(l.title) + "</a>";
+    $("tab-sources").innerHTML =
+      "<div class='box sources'><h3>Best overall sources</h3><ul>" +
+      r.sources.general.map(s => "<li>" + link(s) + "<span class='why-src'>" + esc(s.why) + "</span></li>").join("") + "</ul></div>" +
+      "<div class='box sources' style='margin-top:16px'><h3>For your top topics</h3><ul>" +
+      r.sources.topicLinks.map(t => "<li><b>" + esc(t.topic) + "</b><div class='link-row'>" + t.links.map(link).join(" · ") + "</div></li>").join("") +
+      "</ul></div>" +
+      "<p class='hint'>Also use your class notes, textbook chapter for Unit " + r.unit.id + ", and any review sheets Mrs. Davis posts — teachers often build FRQs from their own slides.</p>";
+  }
+
+  function renderAnalysis(r) {
+    if (!r.frqs.length) {
+      $("tab-analysis").innerHTML = "<p>No FRQs pasted yet. Paste past FRQs above to see which topics, verbs, and question types she uses.</p>";
+      return;
+    }
+    const unitName = id => { const u = engine.getUnit(id); return u ? "Unit " + u.id : "—"; };
+    const rows = r.frqs.map(f => {
+      const topics = f.hits.slice(0, 3).map(h => h.topicId + " " + engine.getUnit(h.unitId).topics.find(t => t.id === h.topicId).name).join("; ");
+      return "<tr><td>#" + f.index + "</td><td>" + esc(f.title) + "</td><td>" + esc(unitName(f.bestUnit)) + "</td><td>" +
+        esc(topics || "no match") + "</td><td>" + esc(APESEngine.FRQ_TYPES[f.type]) + "</td><td>" + (f.parts || "?") + "</td><td>" +
+        esc(Object.keys(f.verbs).join(", ")) + "</td></tr>";
+    }).join("");
+    $("tab-analysis").innerHTML =
+      "<div class='table-scroll'><table><thead><tr><th>#</th><th>Starts with</th><th>Unit</th><th>Topics detected</th><th>Type</th><th>Parts</th><th>Verbs</th></tr></thead>" +
+      "<tbody>" + rows + "</tbody></table></div>" +
+      "<p class='hint'>If a question is split wrong, put a line with <code>---</code> between FRQs and predict again.</p>";
+  }
+
+  function showTab(name) {
+    document.querySelectorAll(".tabs button").forEach(b => b.setAttribute("aria-selected", String(b.dataset.tab === name)));
+    document.querySelectorAll(".tab-panel").forEach(p => { p.hidden = p.id !== "tab-" + name; });
+  }
+
+  // ---------- actions ----------
+
+  // A backup pasted into the text box restores the saved bank.
+  function restoreBackup(text) {
+    let data = null;
+    try { data = JSON.parse(text); } catch (err) { return false; }
+    if (!data || data.app !== "apes-frq-predictor" || !data.bank) return false;
+    const bank = Object.assign(readJSON(BANK_KEY, {}), data.bank);
+    writeJSON(BANK_KEY, bank);
+    els.input.value = bank[els.unit.value] || "";
+    updateStats();
+    setStatus("Restored saved FRQs for units: " + Object.keys(data.bank).join(", ") + ".");
+    return true;
+  }
+
+  function runPrediction(scroll) {
+    if (restoreBackup(els.input.value.trim())) return;
+    savePrefs();
+    const r = engine.predict(els.input.value, {
+      unitId: Number(els.unit.value),
+      numFRQs: Number(els.numFRQs.value),
+      reuse: Number(els.reuse.value) / 100
+    });
+    renderSummary(r);
+    renderPredicted(r);
+    renderStudy(r);
+    renderSources(r);
+    renderAnalysis(r);
+    els.results.hidden = false;
+    showTab("predicted");
+    if (scroll !== false) els.results.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  const SAMPLE = [
+    "FRQ 1",
+    "A farmer in the Midwest applies synthetic nitrogen fertilizer to a corn field next to a lake. Each summer, algal blooms appear in the lake and fish die-offs occur.",
+    "(a) Describe the process of nitrogen fixation.",
+    "(b) Explain how excess nitrate from the fertilizer leads to eutrophication and low dissolved oxygen.",
+    "(c) Identify one way the farmer could reduce nutrient runoff.",
+    "(d) Propose a solution the town could use to reduce algal blooms and explain how it works.",
+    "---",
+    "FRQ 2",
+    "Producers in a grassland ecosystem capture 20,000 kcal/m2/yr. Grasshoppers eat the grass and are eaten by mice, which are eaten by snakes.",
+    "(a) Calculate the energy available to the snakes using the 10% rule. Show your work.",
+    "(b) Explain why energy decreases at each trophic level.",
+    "(c) Identify the trophic level of the mice.",
+    "(d) Describe how the removal of snakes could cause a trophic cascade.",
+    "---",
+    "FRQ 3",
+    "Researchers measured GPP of 15,000 kcal/m2/yr and respiration of 6,000 kcal/m2/yr in a wetland.",
+    "(a) Calculate the net primary productivity. Show your work.",
+    "(b) Explain why wetlands have high primary productivity.",
+    "(c) Describe how deforestation affects the carbon cycle.",
+    "(d) Identify one carbon sink."
+  ].join("\n");
+
+  function bankFor(unit) {
+    return readJSON(BANK_KEY, {})[unit] || "";
+  }
+
+  $("predictBtn").addEventListener("click", () => runPrediction());
+  $("sampleBtn").addEventListener("click", () => {
+    els.input.value = SAMPLE;
+    els.unit.value = "1";
+    updateStats();
+    setStatus("Loaded an example set of Unit 1 FRQs. Replace it with Mrs. Davis's real FRQs for real predictions.");
+  });
+  $("saveBtn").addEventListener("click", () => {
+    if (!els.input.value.trim()) return setStatus("Nothing to save yet.");
+    const bank = readJSON(BANK_KEY, {});
+    bank[els.unit.value] = els.input.value;
+    setStatus(writeJSON(BANK_KEY, bank)
+      ? "Saved in this browser under Unit " + els.unit.value + ". Use Export to back it up."
+      : "Couldn't save (browser storage is blocked). Use Export instead.");
+  });
+  $("loadBtn").addEventListener("click", () => {
+    const saved = bankFor(els.unit.value);
+    if (!saved) return setStatus("No saved FRQs for Unit " + els.unit.value + " yet.");
+    els.input.value = saved;
+    updateStats();
+    setStatus("Loaded your saved Unit " + els.unit.value + " FRQs.");
+  });
+  // The hosted (embedded) version can't download files, so Export copies the bank instead.
+  const EMBEDDED = window.APES_EMBEDDED === true;
+  if (EMBEDDED) {
+    $("printBtn").hidden = true;
+    $("exportBtn").textContent = "Copy backup";
+    $("exportBtn").title = "Copy every saved FRQ so you can paste it somewhere safe";
+  }
+
+  $("exportBtn").addEventListener("click", () => {
+    const bank = readJSON(BANK_KEY, {});
+    if (els.input.value.trim()) bank[els.unit.value] = els.input.value;
+    if (EMBEDDED) {
+      const json = JSON.stringify({ app: "apes-frq-predictor", version: 1, bank });
+      const fallback = () => {
+        els.input.value = json;
+        els.input.select();
+        updateStats();
+        setStatus("Copying was blocked, so the backup is in the text box. Copy it from there.");
+      };
+      try {
+        navigator.clipboard.writeText(json).then(() => setStatus("Backup copied. Paste it into Notes or an email to keep it."), fallback);
+      } catch (err) { fallback(); }
+      return;
+    }
+    const blob = new Blob([JSON.stringify({ app: "apes-frq-predictor", version: 1, bank }, null, 2)], { type: "application/json" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "apes-frq-bank.json";
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    setStatus("Exported your FRQ bank.");
+  });
+  $("importFile").addEventListener("change", e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    file.text().then(text => {
+      let data = null;
+      try { data = JSON.parse(text); } catch (err) { /* plain text file */ }
+      if (data && data.bank) {
+        const bank = Object.assign(readJSON(BANK_KEY, {}), data.bank);
+        writeJSON(BANK_KEY, bank);
+        els.input.value = bank[els.unit.value] || els.input.value;
+        setStatus("Imported FRQs for units: " + Object.keys(data.bank).join(", ") + ".");
+      } else {
+        els.input.value = text;
+        setStatus("Loaded " + file.name + " into the text box.");
+      }
+      updateStats();
+      e.target.value = "";
+    });
+  });
+  $("clearBtn").addEventListener("click", () => { els.input.value = ""; updateStats(); els.results.hidden = true; });
+  $("printBtn").addEventListener("click", () => window.print());
+
+  els.reuse.addEventListener("input", updateReuseLabel);
+  els.input.addEventListener("input", updateStats);
+  els.unit.addEventListener("change", () => { savePrefs(); if (!els.results.hidden) runPrediction(); });
+  els.numFRQs.addEventListener("change", () => { savePrefs(); if (!els.results.hidden) runPrediction(); });
+  els.reuse.addEventListener("change", () => { savePrefs(); if (!els.results.hidden) runPrediction(); });
+  document.querySelectorAll(".tabs button").forEach(b => b.addEventListener("click", () => showTab(b.dataset.tab)));
+  els.input.addEventListener("keydown", e => { if ((e.ctrlKey || e.metaKey) && e.key === "Enter") runPrediction(); });
+
+  updateStats();
+
+  // The hosted version opens on a worked example so the first screen shows what the app does.
+  if (EMBEDDED && !els.input.value.trim()) {
+    const saved = bankFor(els.unit.value);
+    els.input.value = saved || SAMPLE;
+    if (!saved) els.unit.value = "1";
+    updateStats();
+    runPrediction(false);
+    setStatus(saved ? "Loaded your saved Unit " + els.unit.value + " FRQs." : "Showing an example. Tap Clear and paste Mrs. Davis's FRQs to make your own prediction.");
+    clearTimeout(setStatus.t);
+  }
+})();
+
+</script>
+</body>
+</html>
