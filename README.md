@@ -31,6 +31,16 @@ The results have four tabs:
 **Export** and **Import** move them to a file, so you can back them up or share
 them with classmates. **Print / save as PDF** turns the prediction into a study sheet.
 
+## Use it on your phone
+
+The app is hosted at <https://claude.ai/artifact/FKmZoM1A8pSp548bZY6r8B>. It opens on
+a worked example. Tap **Clear**, paste the FRQs, and tap **Predict FRQs**. The hosted
+version can't print or download files, so **Copy backup** copies your saved FRQs
+instead. Paste that backup into the text box and tap **Predict FRQs** to restore it.
+
+To rebuild the hosted page after changing the code, run `npm run build`. That writes
+`dist/apes-frq-predictor.html`, which can then be republished.
+
 ## How the prediction works
 
 The engine (`js/engine.js`) runs entirely in the browser.
@@ -78,6 +88,7 @@ tests/                Engine tests (npm test)
 ```
 npm test     # runs the engine tests with Node's built-in test runner
 npm start    # serves the app at http://localhost:8000
+npm run build  # bundles everything into dist/apes-frq-predictor.html
 ```
 
 To change how often a topic is predicted, edit its `w` value in `js/data/`. To

@@ -27,7 +27,24 @@
     --should: #e2b052;
     --review: #86a8dc;
     --shadow: none;
+    color-scheme: dark;
   }
+}
+
+:root[data-theme="dark"] {
+  --bg: #121814;
+  --surface: #1a221c;
+  --text: #e4ece5;
+  --muted: #9fb0a2;
+  --border: #2c3a2f;
+  --accent: #5cb87a;
+  --accent-ink: #0d1a11;
+  --accent-soft: #213427;
+  --must: #e8806a;
+  --should: #e2b052;
+  --review: #86a8dc;
+  --shadow: none;
+  color-scheme: dark;
 }
 
 * { box-sizing: border-box; }

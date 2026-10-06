@@ -180,7 +180,21 @@
 
   // ---------- actions ----------
 
-  function runPrediction() {
+  // A backup pasted into the text box restores the saved bank.
+  function restoreBackup(text) {
+    let data = null;
+    try { data = JSON.parse(text); } catch (err) { return false; }
+    if (!data || data.app !== "apes-frq-predictor" || !data.bank) return false;
+    const bank = Object.assign(readJSON(BANK_KEY, {}), data.bank);
+    writeJSON(BANK_KEY, bank);
+    els.input.value = bank[els.unit.value] || "";
+    updateStats();
+    setStatus("Restored saved FRQs for units: " + Object.keys(data.bank).join(", ") + ".");
+    return true;
+  }
+
+  function runPrediction(scroll) {
+    if (restoreBackup(els.input.value.trim())) return;
     savePrefs();
     const r = engine.predict(els.input.value, {
       unitId: Number(els.unit.value),
@@ -194,7 +208,7 @@
     renderAnalysis(r);
     els.results.hidden = false;
     showTab("predicted");
-    els.results.scrollIntoView({ behavior: "smooth", block: "start" });
+    if (scroll !== false) els.results.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
   const SAMPLE = [
@@ -224,7 +238,7 @@
     return readJSON(BANK_KEY, {})[unit] || "";
   }
 
-  $("predictBtn").addEventListener("click", runPrediction);
+  $("predictBtn").addEventListener("click", () => runPrediction());
   $("sampleBtn").addEventListener("click", () => {
     els.input.value = SAMPLE;
     els.unit.value = "1";
@@ -246,9 +260,30 @@
     updateStats();
     setStatus("Loaded your saved Unit " + els.unit.value + " FRQs.");
   });
+  // The hosted (embedded) version can't download files, so Export copies the bank instead.
+  const EMBEDDED = window.APES_EMBEDDED === true;
+  if (EMBEDDED) {
+    $("printBtn").hidden = true;
+    $("exportBtn").textContent = "Copy backup";
+    $("exportBtn").title = "Copy every saved FRQ so you can paste it somewhere safe";
+  }
+
   $("exportBtn").addEventListener("click", () => {
     const bank = readJSON(BANK_KEY, {});
     if (els.input.value.trim()) bank[els.unit.value] = els.input.value;
+    if (EMBEDDED) {
+      const json = JSON.stringify({ app: "apes-frq-predictor", version: 1, bank });
+      const fallback = () => {
+        els.input.value = json;
+        els.input.select();
+        updateStats();
+        setStatus("Copying was blocked, so the backup is in the text box. Copy it from there.");
+      };
+      try {
+        navigator.clipboard.writeText(json).then(() => setStatus("Backup copied. Paste it into Notes or an email to keep it."), fallback);
+      } catch (err) { fallback(); }
+      return;
+    }
     const blob = new Blob([JSON.stringify({ app: "apes-frq-predictor", version: 1, bank }, null, 2)], { type: "application/json" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
@@ -288,4 +323,15 @@
   els.input.addEventListener("keydown", e => { if ((e.ctrlKey || e.metaKey) && e.key === "Enter") runPrediction(); });
 
   updateStats();
+
+  // The hosted version opens on a worked example so the first screen shows what the app does.
+  if (EMBEDDED && !els.input.value.trim()) {
+    const saved = bankFor(els.unit.value);
+    els.input.value = saved || SAMPLE;
+    if (!saved) els.unit.value = "1";
+    updateStats();
+    runPrediction(false);
+    setStatus(saved ? "Loaded your saved Unit " + els.unit.value + " FRQs." : "Showing an example. Tap Clear and paste Mrs. Davis's FRQs to make your own prediction.");
+    clearTimeout(setStatus.t);
+  }
 })();
