@@ -20,14 +20,18 @@ tells you what to study and where to study it.
    - Slide left if she rotates to new topics on each test.
 5. Click **Predict FRQs** (or press Ctrl/Cmd + Enter).
 
+The summary at the top includes **Math on this test**: the chance that at least one
+FRQ on the test has a calculation, and which formulas are most likely. It's based on
+how many of her pasted FRQs had math, smoothed toward the AP pattern for that unit.
+
 The results have four tabs:
 
 | Tab | What you get |
 | --- | --- |
-| **Most likely FRQs** | Full multi-part FRQs written in her style, ranked by likelihood. You also get backup FRQs and the reason each one was predicted. |
+| **Most likely FRQs** | Full multi-part FRQs written in her style, ranked by likelihood. Each is labeled **Math** or **No math**, and math FRQs show the formula to know. You also get backup FRQs and the reason each one was predicted. |
 | **What to study** | Every topic in the unit, ranked and marked *Must know*, *Should know*, or *Quick review*. Each has key concepts and vocabulary. You also get a 4-day plan, the unit's math, and answer tips based on the task verbs she uses. |
 | **Sources** | College Board past FRQs and scoring guidelines, AP Classroom, the CED, Khan Academy, Bozeman Science, and review videos. Each top topic gets its own links. |
-| **Your FRQs analyzed** | For each FRQ you pasted: the unit and topics it was matched to, its FRQ type, the number of parts, and the task verbs. |
+| **Your FRQs analyzed** | For each FRQ you pasted: the unit and topics it was matched to, its FRQ type, whether it has math, the number of parts, and the task verbs. |
 
 **Save to my bank** keeps your pasted FRQs in your browser, sorted by unit.
 **Export** and **Import** move them to a file, so you can back them up or share

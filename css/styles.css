@@ -133,6 +133,10 @@ button.ghost { background: transparent; }
 .pill.must { background: color-mix(in srgb, var(--must) 15%, transparent); color: var(--must); }
 .pill.should { background: color-mix(in srgb, var(--should) 15%, transparent); color: var(--should); }
 .pill.review { background: color-mix(in srgb, var(--review) 15%, transparent); color: var(--review); }
+.pill.math { background: color-mix(in srgb, var(--review) 15%, transparent); color: var(--review); }
+.pill.nomath { background: color-mix(in srgb, var(--muted) 15%, transparent); color: var(--muted); }
+.pills { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; }
+.frq .math-note { margin: 10px 0 0; font-size: .9rem; }
 
 .bar { height: 8px; background: var(--border); border-radius: 999px; overflow: hidden; margin-top: 6px; }
 .bar > span { display: block; height: 100%; background: var(--accent); }

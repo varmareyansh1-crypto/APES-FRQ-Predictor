@@ -141,6 +141,10 @@ button.ghost { background: transparent; }
 .pill.must { background: color-mix(in srgb, var(--must) 15%, transparent); color: var(--must); }
 .pill.should { background: color-mix(in srgb, var(--should) 15%, transparent); color: var(--should); }
 .pill.review { background: color-mix(in srgb, var(--review) 15%, transparent); color: var(--review); }
+.pill.math { background: color-mix(in srgb, var(--review) 15%, transparent); color: var(--review); }
+.pill.nomath { background: color-mix(in srgb, var(--muted) 15%, transparent); color: var(--muted); }
+.pills { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; }
+.frq .math-note { margin: 10px 0 0; font-size: .9rem; }
 
 .bar { height: 8px; background: var(--border); border-radius: 999px; overflow: hidden; margin-top: 6px; }
 .bar > span { display: block; height: 100%; background: var(--accent); }
@@ -2258,6 +2262,9 @@ FRQ 2
 
   const VERBS = ["identify", "describe", "explain", "justify", "calculate", "propose", "compare", "predict", "design"];
 
+  // A part that needs math on the page.
+  const MATH_PART = /\b(calculate|show your work|show all work)\b/i;
+
   const FRQ_TYPES = {
     design: "Design an Investigation",
     problem: "Analyze a Problem & Propose a Solution",
@@ -2384,8 +2391,9 @@ FRQ 2
   function detectCalc(text) {
     const t = normalize(text);
     const numbers = (t.match(/\b\d[\d,]*(?:\.\d+)?\b/g) || []).length;
-    const calcWords = /\b(calculate|show your work|show all work|percent change|per capita|kwh|kilowatt|doubling time|half-life|half life|ppm|mg\/kg|how many|how much)\b/.test(t);
-    return calcWords || numbers >= 4;
+    const calcWords = /\b(calculate|show your work|show all work|percent change|per capita|kwh|kilowatt|doubling time|half-life|half life|mg kg|how many|how much)\b/.test(t);
+    const quantityWords = /(%|\b(percent|rate|per|total|kcal|ppm|ppb|kg|kwh|liters?|gallons?|tons?|hectares?|acres?|km|meters?)\b)/.test(t);
+    return calcWords || (numbers >= 4 && quantityWords);
   }
 
   function detectType(text, hasCalc) {
@@ -2558,6 +2566,7 @@ FRQ 2
       }
       scored.sort((a, b) => b.score - a.score || b.topic.w - a.topic.w);
 
+      const mathOutlook = buildMathOutlook(unit, scored, style, frqs, numFRQs);
       const predicted = buildPredictedFRQs(unit, scored, style, frqs, numFRQs, options.extraCandidates == null ? 2 : options.extraCandidates, random);
       const studyPlan = buildStudyPlan(unit, scored, style, crossRaw);
 
@@ -2574,6 +2583,7 @@ FRQ 2
         predicted,
         studyPlan,
         sources: buildSources(unit, scored),
+        mathOutlook,
         tips: buildTips(style)
       };
     }
@@ -2687,6 +2697,12 @@ FRQ 2
         }
 
         const likelihood = Math.round(clamp(anchor.probability * (i < numFRQs ? 1 : 0.8), 5, 95));
+        const mathParts = parts.filter(p => MATH_PART.test(p.text));
+        const mathKinds = [];
+        for (const mp of mathParts) {
+          const owner = unit.topics.find(t => t.parts.includes(mp.text));
+          if (owner && owner.calc && !mathKinds.includes(owner.calc)) mathKinds.push(owner.calc);
+        }
         return {
           rank: i + 1,
           isCore: i < numFRQs,
@@ -2697,10 +2713,33 @@ FRQ 2
           scenario: anchor.topic.scenario,
           parts: parts.map((p, j) => ({ letter: letters[j], text: p.text, context: p.context })),
           likelihood,
-          reasons: anchor.reasons,
+          math: { hasMath: mathParts.length > 0, parts: mathParts.length, kinds: mathKinds },
+          reasons: mathParts.length ? anchor.reasons : anchor.reasons.filter(x => !x.startsWith("has a standard calculation")),
           resembles
         };
       });
+    }
+
+    /**
+     * Chance the unit test has math, from the share of the teacher's FRQs with math
+     * (smoothed toward a unit baseline) and the number of FRQs on the test.
+     */
+    function buildMathOutlook(unit, scored, style, frqs, numFRQs) {
+      const calcTopics = scored.filter(s => s.topic.calc);
+      // Baseline share of FRQs with math: AP FRQ sets always include a calculation question,
+      // and units with more calculation topics lean on math more.
+      const baseline = calcTopics.length ? clamp(0.25 + 0.05 * calcTopics.length, 0.25, 0.45) : 0.1;
+      const withMath = frqs.filter(f => f.hasCalc).length;
+      const perFRQ = (withMath + baseline * 2) / (frqs.length + 2);
+      const chance = Math.round(clamp(1 - Math.pow(1 - perFRQ, numFRQs), 0.03, 0.97) * 100);
+      const level = chance >= 70 ? "Likely" : chance >= 40 ? "Possible" : "Unlikely";
+      return {
+        chance,
+        level,
+        teacherWithMath: withMath,
+        teacherTotal: frqs.length,
+        expect: calcTopics.slice(0, 3).map(s => ({ id: s.topic.id, name: s.topic.name, calc: s.topic.calc, probability: s.probability }))
+      };
     }
 
     function buildStudyPlan(unit, scored, style, crossRaw) {
@@ -2858,7 +2897,25 @@ FRQ 2
     els.summary.innerHTML =
       "<p><b>Unit " + r.unit.id + ": " + esc(r.unit.name) + "</b> — " + esc(r.unit.bigIdea) + "</p>" +
       "<p>Top topics to expect: " + top3 + ".</p>" +
+      "<p>" + mathOutlookText(r.mathOutlook, r.numFRQs) + "</p>" +
       "<p class='hint'>" + basis + "</p>" + off;
+  }
+
+  function mathOutlookText(m, numFRQs) {
+    const cls = m.level === "Likely" ? "math" : m.level === "Possible" ? "should" : "nomath";
+    let text = "<b>Math on this test:</b> <span class='pill " + cls + "'>" + m.level + " · " + m.chance + "%</span> chance at least one of the " +
+      numFRQs + " FRQ" + (numFRQs === 1 ? "" : "s") + " has a calculation";
+    if (m.teacherTotal) text += " (" + m.teacherWithMath + " of your " + m.teacherTotal + " pasted FRQs had math)";
+    text += ".";
+    if (m.expect.length && m.level !== "Unlikely") {
+      text += " Most likely math: " + m.expect.map(e => esc(e.calc)).join("; ") + ".";
+    }
+    return text;
+  }
+
+  function mathPill(math) {
+    if (!math.hasMath) return "<span class='pill nomath'>No math</span>";
+    return "<span class='pill math'>Math" + (math.parts > 1 ? " · " + math.parts + " parts" : "") + "</span>";
   }
 
   function renderPredicted(r) {
@@ -2876,12 +2933,14 @@ FRQ 2
         "<div class='frq-head'><div><h3>Predicted FRQ " + p.rank + ": " + esc(p.anchor.name) + "</h3>" +
         "<p class='meta'>" + esc(p.typeLabel) + " · Topic " + esc(p.anchor.id) +
         (p.partner ? " + " + esc(p.partner.id) + " " + esc(p.partner.name) : "") + "</p></div>" +
-        "<span class='pill'>" + p.likelihood + "% likely</span></div>" +
+        "<div class='pills'>" + mathPill(p.math) + "<span class='pill'>" + p.likelihood + "% likely</span></div></div>" +
         "<p class='scenario'>" + esc(p.scenario) + "</p><ol>" + parts + "</ol>" +
+        (p.math.kinds.length ? "<p class='math-note'><b>Formula to know:</b> " + p.math.kinds.map(esc).join("; ") + "</p>" : "") +
         "<p class='why'>Why: " + esc(p.reasons.join("; ") || "core CED topic") + "." + esc(resembles) + "</p></article>";
     };
     $("tab-predicted").innerHTML =
-      "<p class='hint'>Practice these timed (~20 min each). Likelihood = chance this topic shows up on the test, not that the wording will match exactly.</p>" +
+      "<p class='hint'>Practice these timed (~20 min each). Likelihood = chance this topic shows up on the test, not that the wording will match exactly. " +
+      "<b>Math</b> means at least one part needs a calculation; <b>No math</b> means every part is written.</p>" +
       core.map(card).join("") +
       (backup.length ? "<h3>Backup predictions (also worth practicing)</h3>" + backup.map(card).join("") : "");
   }
@@ -2904,7 +2963,7 @@ FRQ 2
     $("tab-study").innerHTML =
       "<div class='grid2'>" +
       "<div class='box'><h3>4-day study plan</h3><ol>" + plan.schedule.map(s => "<li>" + esc(s) + "</li>").join("") + "</ol></div>" +
-      "<div class='box'><h3>Math to practice</h3><ul>" + plan.math.map(m => "<li>" + esc(m) + "</li>").join("") + "</ul></div>" +
+      "<div class='box'><h3>Math to practice</h3><p class='hint'>Math on this test: <b>" + r.mathOutlook.level + " (" + r.mathOutlook.chance + "%)</b></p><ul>" + plan.math.map(m => "<li>" + esc(m) + "</li>").join("") + "</ul></div>" +
       "<div class='box'><h3>How to answer (based on her verbs)</h3><ul>" +
       r.tips.verbTips.map(t => "<li><b>" + esc(t.verb) + ":</b> " + esc(t.tip.replace(/^[A-Za-z ]+= /, "")) + "</li>").join("") + "</ul></div>" +
       cross + "</div>" +
@@ -2932,11 +2991,11 @@ FRQ 2
     const rows = r.frqs.map(f => {
       const topics = f.hits.slice(0, 3).map(h => h.topicId + " " + engine.getUnit(h.unitId).topics.find(t => t.id === h.topicId).name).join("; ");
       return "<tr><td>#" + f.index + "</td><td>" + esc(f.title) + "</td><td>" + esc(unitName(f.bestUnit)) + "</td><td>" +
-        esc(topics || "no match") + "</td><td>" + esc(APESEngine.FRQ_TYPES[f.type]) + "</td><td>" + (f.parts || "?") + "</td><td>" +
+        esc(topics || "no match") + "</td><td>" + esc(APESEngine.FRQ_TYPES[f.type]) + "</td><td>" + (f.hasCalc ? "Yes" : "No") + "</td><td>" + (f.parts || "?") + "</td><td>" +
         esc(Object.keys(f.verbs).join(", ")) + "</td></tr>";
     }).join("");
     $("tab-analysis").innerHTML =
-      "<div class='table-scroll'><table><thead><tr><th>#</th><th>Starts with</th><th>Unit</th><th>Topics detected</th><th>Type</th><th>Parts</th><th>Verbs</th></tr></thead>" +
+      "<div class='table-scroll'><table><thead><tr><th>#</th><th>Starts with</th><th>Unit</th><th>Topics detected</th><th>Type</th><th>Math?</th><th>Parts</th><th>Verbs</th></tr></thead>" +
       "<tbody>" + rows + "</tbody></table></div>" +
       "<p class='hint'>If a question is split wrong, put a line with <code>---</code> between FRQs and predict again.</p>";
   }

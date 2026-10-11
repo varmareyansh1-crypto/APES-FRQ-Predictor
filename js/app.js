@@ -90,7 +90,25 @@
     els.summary.innerHTML =
       "<p><b>Unit " + r.unit.id + ": " + esc(r.unit.name) + "</b> — " + esc(r.unit.bigIdea) + "</p>" +
       "<p>Top topics to expect: " + top3 + ".</p>" +
+      "<p>" + mathOutlookText(r.mathOutlook, r.numFRQs) + "</p>" +
       "<p class='hint'>" + basis + "</p>" + off;
+  }
+
+  function mathOutlookText(m, numFRQs) {
+    const cls = m.level === "Likely" ? "math" : m.level === "Possible" ? "should" : "nomath";
+    let text = "<b>Math on this test:</b> <span class='pill " + cls + "'>" + m.level + " · " + m.chance + "%</span> chance at least one of the " +
+      numFRQs + " FRQ" + (numFRQs === 1 ? "" : "s") + " has a calculation";
+    if (m.teacherTotal) text += " (" + m.teacherWithMath + " of your " + m.teacherTotal + " pasted FRQs had math)";
+    text += ".";
+    if (m.expect.length && m.level !== "Unlikely") {
+      text += " Most likely math: " + m.expect.map(e => esc(e.calc)).join("; ") + ".";
+    }
+    return text;
+  }
+
+  function mathPill(math) {
+    if (!math.hasMath) return "<span class='pill nomath'>No math</span>";
+    return "<span class='pill math'>Math" + (math.parts > 1 ? " · " + math.parts + " parts" : "") + "</span>";
   }
 
   function renderPredicted(r) {
@@ -108,12 +126,14 @@
         "<div class='frq-head'><div><h3>Predicted FRQ " + p.rank + ": " + esc(p.anchor.name) + "</h3>" +
         "<p class='meta'>" + esc(p.typeLabel) + " · Topic " + esc(p.anchor.id) +
         (p.partner ? " + " + esc(p.partner.id) + " " + esc(p.partner.name) : "") + "</p></div>" +
-        "<span class='pill'>" + p.likelihood + "% likely</span></div>" +
+        "<div class='pills'>" + mathPill(p.math) + "<span class='pill'>" + p.likelihood + "% likely</span></div></div>" +
         "<p class='scenario'>" + esc(p.scenario) + "</p><ol>" + parts + "</ol>" +
+        (p.math.kinds.length ? "<p class='math-note'><b>Formula to know:</b> " + p.math.kinds.map(esc).join("; ") + "</p>" : "") +
         "<p class='why'>Why: " + esc(p.reasons.join("; ") || "core CED topic") + "." + esc(resembles) + "</p></article>";
     };
     $("tab-predicted").innerHTML =
-      "<p class='hint'>Practice these timed (~20 min each). Likelihood = chance this topic shows up on the test, not that the wording will match exactly.</p>" +
+      "<p class='hint'>Practice these timed (~20 min each). Likelihood = chance this topic shows up on the test, not that the wording will match exactly. " +
+      "<b>Math</b> means at least one part needs a calculation; <b>No math</b> means every part is written.</p>" +
       core.map(card).join("") +
       (backup.length ? "<h3>Backup predictions (also worth practicing)</h3>" + backup.map(card).join("") : "");
   }
@@ -136,7 +156,7 @@
     $("tab-study").innerHTML =
       "<div class='grid2'>" +
       "<div class='box'><h3>4-day study plan</h3><ol>" + plan.schedule.map(s => "<li>" + esc(s) + "</li>").join("") + "</ol></div>" +
-      "<div class='box'><h3>Math to practice</h3><ul>" + plan.math.map(m => "<li>" + esc(m) + "</li>").join("") + "</ul></div>" +
+      "<div class='box'><h3>Math to practice</h3><p class='hint'>Math on this test: <b>" + r.mathOutlook.level + " (" + r.mathOutlook.chance + "%)</b></p><ul>" + plan.math.map(m => "<li>" + esc(m) + "</li>").join("") + "</ul></div>" +
       "<div class='box'><h3>How to answer (based on her verbs)</h3><ul>" +
       r.tips.verbTips.map(t => "<li><b>" + esc(t.verb) + ":</b> " + esc(t.tip.replace(/^[A-Za-z ]+= /, "")) + "</li>").join("") + "</ul></div>" +
       cross + "</div>" +
@@ -164,11 +184,11 @@
     const rows = r.frqs.map(f => {
       const topics = f.hits.slice(0, 3).map(h => h.topicId + " " + engine.getUnit(h.unitId).topics.find(t => t.id === h.topicId).name).join("; ");
       return "<tr><td>#" + f.index + "</td><td>" + esc(f.title) + "</td><td>" + esc(unitName(f.bestUnit)) + "</td><td>" +
-        esc(topics || "no match") + "</td><td>" + esc(APESEngine.FRQ_TYPES[f.type]) + "</td><td>" + (f.parts || "?") + "</td><td>" +
+        esc(topics || "no match") + "</td><td>" + esc(APESEngine.FRQ_TYPES[f.type]) + "</td><td>" + (f.hasCalc ? "Yes" : "No") + "</td><td>" + (f.parts || "?") + "</td><td>" +
         esc(Object.keys(f.verbs).join(", ")) + "</td></tr>";
     }).join("");
     $("tab-analysis").innerHTML =
-      "<div class='table-scroll'><table><thead><tr><th>#</th><th>Starts with</th><th>Unit</th><th>Topics detected</th><th>Type</th><th>Parts</th><th>Verbs</th></tr></thead>" +
+      "<div class='table-scroll'><table><thead><tr><th>#</th><th>Starts with</th><th>Unit</th><th>Topics detected</th><th>Type</th><th>Math?</th><th>Parts</th><th>Verbs</th></tr></thead>" +
       "<tbody>" + rows + "</tbody></table></div>" +
       "<p class='hint'>If a question is split wrong, put a line with <code>---</code> between FRQs and predict again.</p>";
   }

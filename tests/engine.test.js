@@ -82,3 +82,30 @@ test("calculation-heavy teachers get calculation FRQs", () => {
   const r = engine.predict(teacher, { unitId: 1, numFRQs: 2 });
   assert.ok(r.predicted.filter(p => p.isCore).every(p => p.parts.some(x => /calculate/i.test(x.text))));
 });
+
+test("labels each predicted FRQ as math or no math", () => {
+  const r = engine.predict("", { unitId: 1, numFRQs: 3 });
+  for (const p of r.predicted) {
+    const needsMath = p.parts.some(x => /calculate|show your work/i.test(x.text));
+    assert.strictEqual(p.math.hasMath, needsMath, "FRQ " + p.rank);
+  }
+  assert.ok(r.predicted.some(p => p.math.hasMath));
+  assert.ok(r.predicted.some(p => p.math.hasMath && p.math.kinds.length));
+});
+
+test("math outlook follows the teacher's FRQs", () => {
+  const mathy = "FRQ 1\n(a) Calculate NPP. Show your work.\nFRQ 2\n(a) Calculate the energy at level 3. Show your work.\nFRQ 3\n(a) Calculate the percent change. Show your work.";
+  const wordy = "FRQ 1\n(a) Describe nitrogen fixation.\nFRQ 2\n(a) Explain the carbon cycle.\nFRQ 3\n(a) Identify a keystone species.";
+  const a = engine.predict(mathy, { unitId: 1, numFRQs: 2 }).mathOutlook;
+  const b = engine.predict(wordy, { unitId: 1, numFRQs: 2 }).mathOutlook;
+  assert.strictEqual(a.teacherWithMath, 3);
+  assert.strictEqual(b.teacherWithMath, 0);
+  assert.ok(a.chance > b.chance);
+  assert.strictEqual(a.level, "Likely");
+  assert.strictEqual(engine.predict("", { unitId: 2 }).mathOutlook.level, "Unlikely");
+});
+
+test("years and counts alone do not count as math", () => {
+  const f = engine.analyze("In 1992 the cod fishery collapsed after 1950s and 1970s growth; by 2000 and 2010 it had not recovered. Explain why.")[0];
+  assert.strictEqual(f.hasCalc, false);
+});

@@ -22,6 +22,9 @@
 
   const VERBS = ["identify", "describe", "explain", "justify", "calculate", "propose", "compare", "predict", "design"];
 
+  // A part that needs math on the page.
+  const MATH_PART = /\b(calculate|show your work|show all work)\b/i;
+
   const FRQ_TYPES = {
     design: "Design an Investigation",
     problem: "Analyze a Problem & Propose a Solution",
@@ -148,8 +151,9 @@
   function detectCalc(text) {
     const t = normalize(text);
     const numbers = (t.match(/\b\d[\d,]*(?:\.\d+)?\b/g) || []).length;
-    const calcWords = /\b(calculate|show your work|show all work|percent change|per capita|kwh|kilowatt|doubling time|half-life|half life|ppm|mg\/kg|how many|how much)\b/.test(t);
-    return calcWords || numbers >= 4;
+    const calcWords = /\b(calculate|show your work|show all work|percent change|per capita|kwh|kilowatt|doubling time|half-life|half life|mg kg|how many|how much)\b/.test(t);
+    const quantityWords = /(%|\b(percent|rate|per|total|kcal|ppm|ppb|kg|kwh|liters?|gallons?|tons?|hectares?|acres?|km|meters?)\b)/.test(t);
+    return calcWords || (numbers >= 4 && quantityWords);
   }
 
   function detectType(text, hasCalc) {
@@ -322,6 +326,7 @@
       }
       scored.sort((a, b) => b.score - a.score || b.topic.w - a.topic.w);
 
+      const mathOutlook = buildMathOutlook(unit, scored, style, frqs, numFRQs);
       const predicted = buildPredictedFRQs(unit, scored, style, frqs, numFRQs, options.extraCandidates == null ? 2 : options.extraCandidates, random);
       const studyPlan = buildStudyPlan(unit, scored, style, crossRaw);
 
@@ -338,6 +343,7 @@
         predicted,
         studyPlan,
         sources: buildSources(unit, scored),
+        mathOutlook,
         tips: buildTips(style)
       };
     }
@@ -451,6 +457,12 @@
         }
 
         const likelihood = Math.round(clamp(anchor.probability * (i < numFRQs ? 1 : 0.8), 5, 95));
+        const mathParts = parts.filter(p => MATH_PART.test(p.text));
+        const mathKinds = [];
+        for (const mp of mathParts) {
+          const owner = unit.topics.find(t => t.parts.includes(mp.text));
+          if (owner && owner.calc && !mathKinds.includes(owner.calc)) mathKinds.push(owner.calc);
+        }
         return {
           rank: i + 1,
           isCore: i < numFRQs,
@@ -461,10 +473,33 @@
           scenario: anchor.topic.scenario,
           parts: parts.map((p, j) => ({ letter: letters[j], text: p.text, context: p.context })),
           likelihood,
-          reasons: anchor.reasons,
+          math: { hasMath: mathParts.length > 0, parts: mathParts.length, kinds: mathKinds },
+          reasons: mathParts.length ? anchor.reasons : anchor.reasons.filter(x => !x.startsWith("has a standard calculation")),
           resembles
         };
       });
+    }
+
+    /**
+     * Chance the unit test has math, from the share of the teacher's FRQs with math
+     * (smoothed toward a unit baseline) and the number of FRQs on the test.
+     */
+    function buildMathOutlook(unit, scored, style, frqs, numFRQs) {
+      const calcTopics = scored.filter(s => s.topic.calc);
+      // Baseline share of FRQs with math: AP FRQ sets always include a calculation question,
+      // and units with more calculation topics lean on math more.
+      const baseline = calcTopics.length ? clamp(0.25 + 0.05 * calcTopics.length, 0.25, 0.45) : 0.1;
+      const withMath = frqs.filter(f => f.hasCalc).length;
+      const perFRQ = (withMath + baseline * 2) / (frqs.length + 2);
+      const chance = Math.round(clamp(1 - Math.pow(1 - perFRQ, numFRQs), 0.03, 0.97) * 100);
+      const level = chance >= 70 ? "Likely" : chance >= 40 ? "Possible" : "Unlikely";
+      return {
+        chance,
+        level,
+        teacherWithMath: withMath,
+        teacherTotal: frqs.length,
+        expect: calcTopics.slice(0, 3).map(s => ({ id: s.topic.id, name: s.topic.name, calc: s.topic.calc, probability: s.probability }))
+      };
     }
 
     function buildStudyPlan(unit, scored, style, crossRaw) {
