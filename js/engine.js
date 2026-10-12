@@ -22,6 +22,8 @@
 
   const VERBS = ["identify", "describe", "explain", "justify", "calculate", "propose", "compare", "predict", "design"];
 
+  const GRAPH_WORDS = /\b(graph|graphs|graphing|graphed|plot|plotted|axes|axis)\b/i;
+
   // A part that needs math on the page.
   const MATH_PART = /\b(calculate|show your work|show all work)\b/i;
 
@@ -156,6 +158,17 @@
     return calcWords || (numbers >= 4 && quantityWords);
   }
 
+  /**
+   * Reads a citation to a released AP Environmental Science FRQ, like "2022 Set 2 # 3".
+   * Citations to other courses (HUG, APB, ...) return null.
+   */
+  function apesCitation(text) {
+    const first = String(text).split("\n").find(l => l.trim()) || "";
+    const m = first.match(/^\W*(?:\d{1,2}[.)]\s*)?\W*(?:apes\s+)?((?:19|20)\d\d)\b(?:\s*set\s*\d)?\s*(?:#|q|question|no\.?)\s*(\d)\b/i);
+    if (!m) return null;
+    return { year: Number(m[1]), question: Number(m[2]) };
+  }
+
   function detectType(text, hasCalc) {
     const t = normalize(text);
     if (/\b(hypothesis|independent variable|dependent variable|control group|controlled variable|experiment|investigation|design)\b/.test(t)) return "design";
@@ -215,7 +228,8 @@
         const unitScores = {};
         for (const h of hits) unitScores[h.unitId] = (unitScores[h.unitId] || 0) + h.score;
         const bestUnit = Object.keys(unitScores).sort((a, b) => unitScores[b] - unitScores[a])[0];
-        const hasCalc = detectCalc(body);
+        const cite = apesCitation(body);
+        const hasCalc = detectCalc(body) || Boolean(cite && cite.year >= 2020 && cite.question === 3);
         const firstLine = body.split("\n").find(l => l.trim()) || "";
         return {
           index: i + 1,
@@ -227,7 +241,10 @@
           verbs: detectVerbs(body),
           parts: countParts(body),
           hasCalc,
-          type: detectType(body, hasCalc),
+          hasGraph: GRAPH_WORDS.test(body),
+          // Teachers mark must-do questions with *** (or more).
+          starred: /\*{2,}/.test(body),
+          type: cite && cite.year >= 2020 && cite.question === 1 ? "design" : detectType(body, hasCalc),
           vec: vector(body)
         };
       });
@@ -236,12 +253,14 @@
     /** Summarize the teacher's FRQ-writing style across all pasted FRQs. */
     function teacherStyle(frqs) {
       const verbTotals = {};
-      let parts = 0, partsN = 0, calcN = 0;
+      let parts = 0, partsN = 0, calcN = 0, graphN = 0, starredN = 0;
       const typeCounts = { design: 0, problem: 0, calc: 0 };
       for (const f of frqs) {
         for (const v in f.verbs) verbTotals[v] = (verbTotals[v] || 0) + f.verbs[v];
         if (f.parts) { parts += f.parts; partsN++; }
         if (f.hasCalc) calcN++;
+        if (f.hasGraph) graphN++;
+        if (f.starred) starredN++;
         typeCounts[f.type]++;
       }
       const topVerbs = Object.keys(verbTotals).sort((a, b) => verbTotals[b] - verbTotals[a]);
@@ -250,6 +269,9 @@
         topVerbs,
         avgParts: partsN ? Math.round(parts / partsN) : 4,
         calcRate: frqs.length ? calcN / frqs.length : 0.5,
+        graphRate: frqs.length ? graphN / frqs.length : 0,
+        graphN,
+        starredN,
         typeCounts,
         n: frqs.length
       };
@@ -277,10 +299,15 @@
 
       // Teacher signal per topic (only counting hits within this unit).
       const teacherRaw = {};
+      const starredTopics = new Set();
       for (const f of frqs) {
         const unitHits = f.hits.filter(h => h.unitId === unit.id);
         const total = unitHits.reduce((s, h) => s + h.score, 0) || 1;
-        for (const h of unitHits) teacherRaw[h.topicId] = (teacherRaw[h.topicId] || 0) + h.score / total;
+        const weight = f.starred ? 2 : 1;
+        for (const h of unitHits) {
+          teacherRaw[h.topicId] = (teacherRaw[h.topicId] || 0) + weight * h.score / total;
+          if (f.starred) starredTopics.add(h.topicId);
+        }
       }
       const teacherMax = Math.max(0, ...Object.values(teacherRaw));
       const hasTeacherData = teacherMax > 0;
@@ -311,6 +338,7 @@
         else if (topic.w === 3) reasons.push("regularly tested on AP FRQs");
         if (teacher >= 0.5) reasons.push("heavily featured in your teacher's FRQs");
         else if (teacher > 0) reasons.push("appears in your teacher's FRQs");
+        if (starredTopics.has(topic.id)) reasons.push("your teacher starred (***) an FRQ on this topic");
         if (gap && reuse < 0.5 && topic.w >= 3) reasons.push("core topic not yet tested — likely rotation pick");
         if (topic.calc) reasons.push("has a standard calculation (" + topic.calc + ")");
         return { topic, prior, teacher, gap, score, reasons };
@@ -370,7 +398,14 @@
       return null;
     }
 
+    function graphPart(type) {
+      return type === "design"
+        ? "On the axes provided, sketch a graph of the results you would expect. Label both axes with units and put the independent variable on the x-axis."
+        : "Construct a graph of the data, labeling both axes with units, and describe the trend it shows.";
+    }
+
     function designPart(topic) {
+      if (topic.design) return topic.design;
       return "Design an experiment to investigate a factor related to " + topic.name.toLowerCase() +
         ". Identify the hypothesis, the independent variable, the dependent variable, a control, and one variable that should be held constant.";
     }
@@ -388,6 +423,16 @@
       } else {
         const ap = ["problem", "calc", "design"];
         for (let i = 0; i < total; i++) typeOrder.push(ap[i % ap.length]);
+      }
+
+      // A design FRQ needs a topic students could actually test in a lab.
+      const usedAnchors = new Set();
+      for (let i = 0; i < anchors.length; i++) {
+        if (typeOrder[i] === "design" && anchors[i].topic.noLab) {
+          const swap = scored.find(s => !s.topic.noLab && !anchors.includes(s));
+          if (swap) anchors[i] = swap;
+        }
+        usedAnchors.add(anchors[i].topic.id);
       }
 
       const partsWanted = clamp(style.avgParts || 4, 3, 6);
@@ -439,6 +484,9 @@
           else if (type === "calc") parts.splice(Math.min(1, parts.length), 0, required);
           else parts.push(required);
         }
+        // She assigns graphing, so add a graphing part to design and calculation FRQs.
+        const wantsGraph = style.n > 0 && style.graphRate >= 0.1 && (type === "design" || type === "calc");
+        if (wantsGraph) parts.splice(Math.min(type === "design" ? 1 : 2, parts.length), 0, { text: graphPart(type), context: null });
         for (const p of parts) usedParts.add(p.text);
 
         // Only show a borrowed scenario once.
@@ -474,6 +522,7 @@
           parts: parts.map((p, j) => ({ letter: letters[j], text: p.text, context: p.context })),
           likelihood,
           math: { hasMath: mathParts.length > 0, parts: mathParts.length, kinds: mathKinds },
+          graphing: wantsGraph,
           reasons: mathParts.length ? anchor.reasons : anchor.reasons.filter(x => !x.startsWith("has a standard calculation")),
           resembles
         };

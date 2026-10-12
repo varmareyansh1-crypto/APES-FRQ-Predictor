@@ -15,6 +15,13 @@ tells you what to study and where to study it.
 3. **Paste past FRQs** into the text box. Use FRQs from any unit; more is better.
    Start each question with a line like `FRQ 1`, `Question 2`, or `1.`, or put a
    `---` line between questions.
+   You can also paste a list of the released AP FRQs she assigns, one per line
+   (for example `1. 2022 Set 2 # 3 Coal ash and population change`). The app reads
+   the titles and her notes: "Graphing" and "Experimental Design" shape the predicted
+   FRQs, `***` marks an FRQ as extra important (it counts double), and on the post-2020
+   APES exam Question 1 is always experimental design and Question 3 always has math.
+   Titles alone can't show what's inside a question, so pasting the full question text
+   gives a better prediction.
 4. Set **FRQs on the test** and **Teacher style**:
    - Slide right if Mrs. Davis tends to reuse the same topics or questions.
    - Slide left if she rotates to new topics on each test.

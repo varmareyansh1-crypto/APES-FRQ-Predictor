@@ -285,7 +285,8 @@ FRQ 2
       topics: [
         {
           id: "1.1", name: "Introduction to Ecosystems", w: 3,
-          kw: ["ecosystem", "predation", "predator", "prey", "mutualism", "commensalism", "parasitism", "symbiosis", "competition", "resource partitioning", "niche", "interspecific"],
+          design: "Design an experiment to test whether two species of duckweed (or paramecium) compete for the same resources, using cultures grown alone and together. Identify the hypothesis, the independent variable, the dependent variable, a control, and one variable that should be held constant.",
+          kw: ["ecosystem", "predation", "predator", "prey", "mutualism", "commensalism", "parasitism", "symbiosis", "competition", "resource partitioning", "niche", "interspecific", "competitive exclusion"],
           concepts: [
             "Species interactions: predation, parasitism, mutualism, commensalism, competition",
             "Resource partitioning (temporal, spatial, morphological) reduces competition",
@@ -546,6 +547,7 @@ FRQ 2
         },
         {
           id: "2.4", name: "Ecological Tolerance", w: 2,
+          design: "Design an experiment to determine the range of water temperatures that brine shrimp (or another aquatic organism) can tolerate. Identify the hypothesis, the independent variable, the dependent variable, a control, and one variable that should be held constant.",
           kw: ["ecological tolerance", "range of tolerance", "zone of physiological stress", "zone of intolerance", "optimal range", "tolerance"],
           concepts: [
             "Optimal range, zones of physiological stress, zones of intolerance",
@@ -626,6 +628,7 @@ FRQ 2
       topics: [
         {
           id: "3.1", name: "Generalist and Specialist Species", w: 2,
+          design: "Design an experiment to compare how a generalist and a specialist insect species respond to a change in available food plants. Identify the hypothesis, the independent variable, the dependent variable, a control, and one variable that should be held constant.",
           kw: ["generalist", "specialist", "broad niche", "narrow niche"],
           concepts: [
             "Generalists: broad niche, tolerate varied conditions (raccoons, cockroaches)",
@@ -644,6 +647,7 @@ FRQ 2
         },
         {
           id: "3.2", name: "K-Selected and r-Selected Species", w: 3,
+          design: "Design an experiment to compare the population growth of an r-selected organism (such as fruit flies) under high and low food availability. Identify the hypothesis, the independent variable, the dependent variable, a control, and one variable that should be held constant.",
           kw: ["k-selected", "r-selected", "k selected", "r selected", "reproductive strategy", "parental care", "many offspring"],
           concepts: [
             "r-selected: many offspring, little parental care, short lifespan, early maturity",
@@ -680,6 +684,7 @@ FRQ 2
         },
         {
           id: "3.4", name: "Carrying Capacity", w: 3,
+          design: "Design an experiment to determine how the amount of nutrients affects the carrying capacity of a yeast or duckweed population. Identify the hypothesis, the independent variable, the dependent variable, a control, and one variable that should be held constant.",
           kw: ["carrying capacity", "overshoot", "die-off", "dieoff", "limiting factor", "density-dependent", "density-independent"],
           concepts: [
             "Carrying capacity (K) is the max population the environment can sustain",
@@ -698,7 +703,8 @@ FRQ 2
         },
         {
           id: "3.5", name: "Population Growth and Resource Availability", w: 3,
-          kw: ["exponential growth", "logistic growth", "j-curve", "s-curve", "j curve", "s curve", "biotic potential", "population growth"],
+          design: "Design an experiment to measure how a population of duckweed grows over time when nutrients are limited compared with when they are unlimited. Identify the hypothesis, the independent variable, the dependent variable, a control, and one variable that should be held constant.",
+          kw: ["exponential growth", "logistic growth", "j-curve", "s-curve", "j curve", "s curve", "biotic potential", "population growth", "logistic", "logistical", "carrying capacity graph"],
           concepts: [
             "Exponential growth (J-curve) occurs with unlimited resources",
             "Logistic growth (S-curve) levels off at carrying capacity",
@@ -716,8 +722,8 @@ FRQ 2
           calc: "Doubling time = 70 / growth rate (%)"
         },
         {
-          id: "3.6", name: "Age Structure Diagrams", w: 4,
-          kw: ["age structure", "population pyramid", "age-structure", "prereproductive", "postreproductive", "reproductive age", "cohort"],
+          id: "3.6", name: "Age Structure Diagrams", w: 4, noLab: true,
+          kw: ["age structure", "population pyramid", "age-structure", "prereproductive", "postreproductive", "reproductive age", "cohort", "age pyramid", "aging population", "aging", "elderly", "dependency ratio", "graying"],
           concepts: [
             "Pyramid (wide base) = rapid growth; column = stable; inverted/narrow base = declining",
             "Read cohorts: pre-reproductive (0-14), reproductive (15-44), post-reproductive (45+)",
@@ -734,8 +740,8 @@ FRQ 2
           ]
         },
         {
-          id: "3.7", name: "Total Fertility Rate", w: 3,
-          kw: ["total fertility rate", "tfr", "replacement level", "replacement fertility", "fertility", "infant mortality"],
+          id: "3.7", name: "Total Fertility Rate", w: 3, noLab: true,
+          kw: ["total fertility rate", "tfr", "replacement level", "replacement fertility", "fertility", "infant mortality", "female education", "education of women", "role of women", "women", "woman", "workforce", "working force", "family planning", "contraception"],
           concepts: [
             "TFR = average number of children per woman in her lifetime",
             "Replacement-level fertility ~2.1 (higher in developing countries due to infant mortality)",
@@ -752,8 +758,8 @@ FRQ 2
           ]
         },
         {
-          id: "3.8", name: "Human Population Dynamics", w: 4,
-          kw: ["birth rate", "death rate", "crude birth rate", "crude death rate", "immigration", "emigration", "growth rate", "malthus", "doubling time", "rule of 70", "human population"],
+          id: "3.8", name: "Human Population Dynamics", w: 4, noLab: true,
+          kw: ["birth rate", "death rate", "crude birth rate", "crude death rate", "immigration", "emigration", "growth rate", "malthus", "doubling time", "rule of 70", "human population", "population increase", "population change", "population growth rate"],
           concepts: [
             "Growth rate (%) = (CBR - CDR) / 10 when rates are per 1,000",
             "Population change = (births + immigration) - (deaths + emigration)",
@@ -771,8 +777,8 @@ FRQ 2
           calc: "Growth rate % = (CBR - CDR)/10; doubling = 70/rate"
         },
         {
-          id: "3.9", name: "Demographic Transition", w: 4,
-          kw: ["demographic transition", "preindustrial", "pre-industrial", "transitional", "industrial", "postindustrial", "post-industrial", "stage 1", "stage 2", "stage 3", "stage 4"],
+          id: "3.9", name: "Demographic Transition", w: 4, noLab: true,
+          kw: ["demographic transition", "preindustrial", "pre-industrial", "transitional", "industrial", "postindustrial", "post-industrial", "stage 1", "stage 2", "stage 3", "stage 4", "industrial population", "industrialization"],
           concepts: [
             "Stage 1 (pre-industrial): high CBR and CDR; Stage 2: CDR drops (fastest growth)",
             "Stage 3 (industrial): CBR drops; Stage 4 (post-industrial): low CBR and CDR",
@@ -810,7 +816,7 @@ FRQ 2
       bigIdea: "Earth's geology, soil, atmosphere, and climate shape where life and resources exist.",
       topics: [
         {
-          id: "4.1", name: "Plate Tectonics", w: 3,
+          id: "4.1", name: "Plate Tectonics", w: 3, noLab: true,
           kw: ["plate tectonics", "plate boundary", "convergent", "divergent", "transform", "subduction", "earthquake", "volcano", "ring of fire", "hot spot", "mid-ocean ridge", "tectonic"],
           concepts: [
             "Convergent (subduction, mountains, volcanoes), divergent (ridges, rift valleys), transform (earthquakes)",
@@ -846,6 +852,7 @@ FRQ 2
         },
         {
           id: "4.3", name: "Soil Composition and Properties", w: 4,
+          design: "Design an experiment to compare the permeability of sand, silt, and clay soils. Identify the hypothesis, the independent variable, the dependent variable, a control, and one variable that should be held constant.",
           kw: ["soil texture", "soil triangle", "sand", "silt", "clay", "loam", "porosity", "permeability", "water holding capacity", "soil fertility", "soil ph"],
           concepts: [
             "Texture triangle: % sand, silt, clay (loam is ideal for agriculture)",
@@ -952,7 +959,7 @@ FRQ 2
           ]
         },
         {
-          id: "4.9", name: "El Nino and La Nina", w: 2,
+          id: "4.9", name: "El Nino and La Nina", w: 2, noLab: true,
           kw: ["el nino", "la nina", "enso", "upwelling", "southern oscillation", "el niño", "la niña", "walker circulation"],
           concepts: [
             "El Nino: weakened trade winds, warm water shifts east, reduced upwelling off South America",
@@ -978,7 +985,7 @@ FRQ 2
       bigIdea: "Human land and water use has consequences that sustainable practices can reduce.",
       topics: [
         {
-          id: "5.1", name: "The Tragedy of the Commons", w: 3,
+          id: "5.1", name: "The Tragedy of the Commons", w: 3, noLab: true,
           kw: ["tragedy of the commons", "commons", "common resource", "shared resource", "overexploitation", "overgrazing", "garrett hardin"],
           concepts: [
             "Individuals acting in self-interest deplete shared resources",
@@ -1068,6 +1075,7 @@ FRQ 2
         },
         {
           id: "5.6", name: "Pest Control Methods", w: 3,
+          design: "Design an experiment to test whether a new pesticide reduces crop damage without harming earthworms in the soil. Identify the hypothesis, the independent variable, the dependent variable, a control, and one variable that should be held constant.",
           kw: ["pesticide", "pest control", "herbicide", "insecticide", "pesticide resistance", "pesticide treadmill", "ddt", "neonicotinoid"],
           concepts: [
             "Pesticides increase yields but kill non-target species and pollinators",
@@ -1288,7 +1296,7 @@ FRQ 2
       bigIdea: "Energy choices affect the environment; conservation and renewables reduce impacts.",
       topics: [
         {
-          id: "6.1", name: "Renewable and Nonrenewable Resources", w: 2,
+          id: "6.1", name: "Renewable and Nonrenewable Resources", w: 2, noLab: true,
           kw: ["renewable", "nonrenewable", "non-renewable", "depletable", "nondepletable", "finite resource"],
           concepts: [
             "Nonrenewable: fossil fuels, uranium (finite)",
@@ -1306,7 +1314,7 @@ FRQ 2
           ]
         },
         {
-          id: "6.2", name: "Global Energy Consumption", w: 2,
+          id: "6.2", name: "Global Energy Consumption", w: 2, noLab: true,
           kw: ["energy consumption", "per capita energy", "developed countries", "developing countries", "energy demand"],
           concepts: [
             "Developed countries use far more energy per capita",
@@ -1342,7 +1350,7 @@ FRQ 2
           ]
         },
         {
-          id: "6.4", name: "Distribution of Natural Energy Resources", w: 1,
+          id: "6.4", name: "Distribution of Natural Energy Resources", w: 1, noLab: true,
           kw: ["distribution of energy", "energy reserves", "oil reserves", "geopolitics"],
           concepts: [
             "Fossil fuel reserves are unevenly distributed",
@@ -1837,7 +1845,7 @@ FRQ 2
         },
         {
           id: "8.9", name: "Solid Waste Disposal", w: 4,
-          kw: ["solid waste", "landfill", "sanitary landfill", "leachate", "incineration", "incinerator", "e-waste", "municipal solid waste", "open dump", "ocean dumping"],
+          kw: ["solid waste", "landfill", "sanitary landfill", "leachate", "incineration", "incinerator", "e-waste", "municipal solid waste", "open dump", "ocean dumping", "msw"],
           concepts: [
             "Sanitary landfill: clay/plastic liner, leachate collection, methane capture, daily soil cover",
             "Leachate can contaminate groundwater; landfills emit methane",
@@ -1890,6 +1898,7 @@ FRQ 2
         },
         {
           id: "8.12", name: "Lethal Dose 50% (LD50)", w: 3,
+          design: "Design an experiment to determine the LD50 of a chemical using brine shrimp or radish seeds. Identify the hypothesis, the independent variable, the dependent variable, a control, and one variable that should be held constant.",
           kw: ["ld50", "ld 50", "lethal dose", "toxicity", "toxic", "mg/kg"],
           concepts: [
             "LD50: dose that kills 50% of a test population",
@@ -1986,7 +1995,7 @@ FRQ 2
           ]
         },
         {
-          id: "9.2", name: "Reducing Ozone Depletion", w: 2,
+          id: "9.2", name: "Reducing Ozone Depletion", w: 2, noLab: true,
           kw: ["montreal protocol", "hcfc", "hfc", "ozone-depleting", "ozone recovery"],
           concepts: [
             "Montreal Protocol (1987) phased out CFCs — most successful environmental treaty",
@@ -2077,6 +2086,7 @@ FRQ 2
         },
         {
           id: "9.7", name: "Ocean Acidification", w: 4,
+          design: "Design an experiment to test how increasing acidity affects the mass of seashells over time. Identify the hypothesis, the independent variable, the dependent variable, a control, and one variable that should be held constant.",
           kw: ["ocean acidification", "carbonic acid", "calcium carbonate", "shell", "carbonate", "acidification", "pteropod"],
           concepts: [
             "CO2 + H2O -> carbonic acid; lowers ocean pH",
@@ -2262,6 +2272,8 @@ FRQ 2
 
   const VERBS = ["identify", "describe", "explain", "justify", "calculate", "propose", "compare", "predict", "design"];
 
+  const GRAPH_WORDS = /\b(graph|graphs|graphing|graphed|plot|plotted|axes|axis)\b/i;
+
   // A part that needs math on the page.
   const MATH_PART = /\b(calculate|show your work|show all work)\b/i;
 
@@ -2396,6 +2408,17 @@ FRQ 2
     return calcWords || (numbers >= 4 && quantityWords);
   }
 
+  /**
+   * Reads a citation to a released AP Environmental Science FRQ, like "2022 Set 2 # 3".
+   * Citations to other courses (HUG, APB, ...) return null.
+   */
+  function apesCitation(text) {
+    const first = String(text).split("\n").find(l => l.trim()) || "";
+    const m = first.match(/^\W*(?:\d{1,2}[.)]\s*)?\W*(?:apes\s+)?((?:19|20)\d\d)\b(?:\s*set\s*\d)?\s*(?:#|q|question|no\.?)\s*(\d)\b/i);
+    if (!m) return null;
+    return { year: Number(m[1]), question: Number(m[2]) };
+  }
+
   function detectType(text, hasCalc) {
     const t = normalize(text);
     if (/\b(hypothesis|independent variable|dependent variable|control group|controlled variable|experiment|investigation|design)\b/.test(t)) return "design";
@@ -2455,7 +2478,8 @@ FRQ 2
         const unitScores = {};
         for (const h of hits) unitScores[h.unitId] = (unitScores[h.unitId] || 0) + h.score;
         const bestUnit = Object.keys(unitScores).sort((a, b) => unitScores[b] - unitScores[a])[0];
-        const hasCalc = detectCalc(body);
+        const cite = apesCitation(body);
+        const hasCalc = detectCalc(body) || Boolean(cite && cite.year >= 2020 && cite.question === 3);
         const firstLine = body.split("\n").find(l => l.trim()) || "";
         return {
           index: i + 1,
@@ -2467,7 +2491,10 @@ FRQ 2
           verbs: detectVerbs(body),
           parts: countParts(body),
           hasCalc,
-          type: detectType(body, hasCalc),
+          hasGraph: GRAPH_WORDS.test(body),
+          // Teachers mark must-do questions with *** (or more).
+          starred: /\*{2,}/.test(body),
+          type: cite && cite.year >= 2020 && cite.question === 1 ? "design" : detectType(body, hasCalc),
           vec: vector(body)
         };
       });
@@ -2476,12 +2503,14 @@ FRQ 2
     /** Summarize the teacher's FRQ-writing style across all pasted FRQs. */
     function teacherStyle(frqs) {
       const verbTotals = {};
-      let parts = 0, partsN = 0, calcN = 0;
+      let parts = 0, partsN = 0, calcN = 0, graphN = 0, starredN = 0;
       const typeCounts = { design: 0, problem: 0, calc: 0 };
       for (const f of frqs) {
         for (const v in f.verbs) verbTotals[v] = (verbTotals[v] || 0) + f.verbs[v];
         if (f.parts) { parts += f.parts; partsN++; }
         if (f.hasCalc) calcN++;
+        if (f.hasGraph) graphN++;
+        if (f.starred) starredN++;
         typeCounts[f.type]++;
       }
       const topVerbs = Object.keys(verbTotals).sort((a, b) => verbTotals[b] - verbTotals[a]);
@@ -2490,6 +2519,9 @@ FRQ 2
         topVerbs,
         avgParts: partsN ? Math.round(parts / partsN) : 4,
         calcRate: frqs.length ? calcN / frqs.length : 0.5,
+        graphRate: frqs.length ? graphN / frqs.length : 0,
+        graphN,
+        starredN,
         typeCounts,
         n: frqs.length
       };
@@ -2517,10 +2549,15 @@ FRQ 2
 
       // Teacher signal per topic (only counting hits within this unit).
       const teacherRaw = {};
+      const starredTopics = new Set();
       for (const f of frqs) {
         const unitHits = f.hits.filter(h => h.unitId === unit.id);
         const total = unitHits.reduce((s, h) => s + h.score, 0) || 1;
-        for (const h of unitHits) teacherRaw[h.topicId] = (teacherRaw[h.topicId] || 0) + h.score / total;
+        const weight = f.starred ? 2 : 1;
+        for (const h of unitHits) {
+          teacherRaw[h.topicId] = (teacherRaw[h.topicId] || 0) + weight * h.score / total;
+          if (f.starred) starredTopics.add(h.topicId);
+        }
       }
       const teacherMax = Math.max(0, ...Object.values(teacherRaw));
       const hasTeacherData = teacherMax > 0;
@@ -2551,6 +2588,7 @@ FRQ 2
         else if (topic.w === 3) reasons.push("regularly tested on AP FRQs");
         if (teacher >= 0.5) reasons.push("heavily featured in your teacher's FRQs");
         else if (teacher > 0) reasons.push("appears in your teacher's FRQs");
+        if (starredTopics.has(topic.id)) reasons.push("your teacher starred (***) an FRQ on this topic");
         if (gap && reuse < 0.5 && topic.w >= 3) reasons.push("core topic not yet tested — likely rotation pick");
         if (topic.calc) reasons.push("has a standard calculation (" + topic.calc + ")");
         return { topic, prior, teacher, gap, score, reasons };
@@ -2610,7 +2648,14 @@ FRQ 2
       return null;
     }
 
+    function graphPart(type) {
+      return type === "design"
+        ? "On the axes provided, sketch a graph of the results you would expect. Label both axes with units and put the independent variable on the x-axis."
+        : "Construct a graph of the data, labeling both axes with units, and describe the trend it shows.";
+    }
+
     function designPart(topic) {
+      if (topic.design) return topic.design;
       return "Design an experiment to investigate a factor related to " + topic.name.toLowerCase() +
         ". Identify the hypothesis, the independent variable, the dependent variable, a control, and one variable that should be held constant.";
     }
@@ -2628,6 +2673,16 @@ FRQ 2
       } else {
         const ap = ["problem", "calc", "design"];
         for (let i = 0; i < total; i++) typeOrder.push(ap[i % ap.length]);
+      }
+
+      // A design FRQ needs a topic students could actually test in a lab.
+      const usedAnchors = new Set();
+      for (let i = 0; i < anchors.length; i++) {
+        if (typeOrder[i] === "design" && anchors[i].topic.noLab) {
+          const swap = scored.find(s => !s.topic.noLab && !anchors.includes(s));
+          if (swap) anchors[i] = swap;
+        }
+        usedAnchors.add(anchors[i].topic.id);
       }
 
       const partsWanted = clamp(style.avgParts || 4, 3, 6);
@@ -2679,6 +2734,9 @@ FRQ 2
           else if (type === "calc") parts.splice(Math.min(1, parts.length), 0, required);
           else parts.push(required);
         }
+        // She assigns graphing, so add a graphing part to design and calculation FRQs.
+        const wantsGraph = style.n > 0 && style.graphRate >= 0.1 && (type === "design" || type === "calc");
+        if (wantsGraph) parts.splice(Math.min(type === "design" ? 1 : 2, parts.length), 0, { text: graphPart(type), context: null });
         for (const p of parts) usedParts.add(p.text);
 
         // Only show a borrowed scenario once.
@@ -2714,6 +2772,7 @@ FRQ 2
           parts: parts.map((p, j) => ({ letter: letters[j], text: p.text, context: p.context })),
           likelihood,
           math: { hasMath: mathParts.length > 0, parts: mathParts.length, kinds: mathKinds },
+          graphing: wantsGraph,
           reasons: mathParts.length ? anchor.reasons : anchor.reasons.filter(x => !x.startsWith("has a standard calculation")),
           resembles
         };
@@ -2887,7 +2946,9 @@ FRQ 2
       basis = "Based on " + r.frqs.length + " pasted FRQ(s) (" + r.relevantCount + " touch Unit " + r.unit.id +
         "), AP exam topic frequencies, and her style: about " + r.style.avgParts + " parts per FRQ, favorite verbs " +
         (r.style.topVerbs.slice(0, 3).map(v => "<b>" + esc(v) + "</b>").join(", ") || "n/a") +
-        ", calculations in " + Math.round(r.style.calcRate * 100) + "% of FRQs.";
+        ", calculations in " + Math.round(r.style.calcRate * 100) + "% of FRQs" +
+        (r.style.graphN ? ", graphing in " + r.style.graphN : "") +
+        (r.style.starredN ? ", " + r.style.starredN + " starred (***) FRQ" + (r.style.starredN === 1 ? "" : "s") + " counted double" : "") + ".";
     }
     let off = "";
     if (r.offUnit.length) {
@@ -2933,7 +2994,7 @@ FRQ 2
         "<div class='frq-head'><div><h3>Predicted FRQ " + p.rank + ": " + esc(p.anchor.name) + "</h3>" +
         "<p class='meta'>" + esc(p.typeLabel) + " · Topic " + esc(p.anchor.id) +
         (p.partner ? " + " + esc(p.partner.id) + " " + esc(p.partner.name) : "") + "</p></div>" +
-        "<div class='pills'>" + mathPill(p.math) + "<span class='pill'>" + p.likelihood + "% likely</span></div></div>" +
+        "<div class='pills'>" + mathPill(p.math) + (p.graphing ? "<span class='pill should'>Graphing</span>" : "") + "<span class='pill'>" + p.likelihood + "% likely</span></div></div>" +
         "<p class='scenario'>" + esc(p.scenario) + "</p><ol>" + parts + "</ol>" +
         (p.math.kinds.length ? "<p class='math-note'><b>Formula to know:</b> " + p.math.kinds.map(esc).join("; ") + "</p>" : "") +
         "<p class='why'>Why: " + esc(p.reasons.join("; ") || "core CED topic") + "." + esc(resembles) + "</p></article>";

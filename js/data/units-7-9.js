@@ -301,7 +301,7 @@
         },
         {
           id: "8.9", name: "Solid Waste Disposal", w: 4,
-          kw: ["solid waste", "landfill", "sanitary landfill", "leachate", "incineration", "incinerator", "e-waste", "municipal solid waste", "open dump", "ocean dumping"],
+          kw: ["solid waste", "landfill", "sanitary landfill", "leachate", "incineration", "incinerator", "e-waste", "municipal solid waste", "open dump", "ocean dumping", "msw"],
           concepts: [
             "Sanitary landfill: clay/plastic liner, leachate collection, methane capture, daily soil cover",
             "Leachate can contaminate groundwater; landfills emit methane",
@@ -354,6 +354,7 @@
         },
         {
           id: "8.12", name: "Lethal Dose 50% (LD50)", w: 3,
+          design: "Design an experiment to determine the LD50 of a chemical using brine shrimp or radish seeds. Identify the hypothesis, the independent variable, the dependent variable, a control, and one variable that should be held constant.",
           kw: ["ld50", "ld 50", "lethal dose", "toxicity", "toxic", "mg/kg"],
           concepts: [
             "LD50: dose that kills 50% of a test population",
@@ -450,7 +451,7 @@
           ]
         },
         {
-          id: "9.2", name: "Reducing Ozone Depletion", w: 2,
+          id: "9.2", name: "Reducing Ozone Depletion", w: 2, noLab: true,
           kw: ["montreal protocol", "hcfc", "hfc", "ozone-depleting", "ozone recovery"],
           concepts: [
             "Montreal Protocol (1987) phased out CFCs — most successful environmental treaty",
@@ -541,6 +542,7 @@
         },
         {
           id: "9.7", name: "Ocean Acidification", w: 4,
+          design: "Design an experiment to test how increasing acidity affects the mass of seashells over time. Identify the hypothesis, the independent variable, the dependent variable, a control, and one variable that should be held constant.",
           kw: ["ocean acidification", "carbonic acid", "calcium carbonate", "shell", "carbonate", "acidification", "pteropod"],
           concepts: [
             "CO2 + H2O -> carbonic acid; lowers ocean pH",

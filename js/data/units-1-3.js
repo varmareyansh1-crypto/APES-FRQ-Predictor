@@ -14,7 +14,8 @@
       topics: [
         {
           id: "1.1", name: "Introduction to Ecosystems", w: 3,
-          kw: ["ecosystem", "predation", "predator", "prey", "mutualism", "commensalism", "parasitism", "symbiosis", "competition", "resource partitioning", "niche", "interspecific"],
+          design: "Design an experiment to test whether two species of duckweed (or paramecium) compete for the same resources, using cultures grown alone and together. Identify the hypothesis, the independent variable, the dependent variable, a control, and one variable that should be held constant.",
+          kw: ["ecosystem", "predation", "predator", "prey", "mutualism", "commensalism", "parasitism", "symbiosis", "competition", "resource partitioning", "niche", "interspecific", "competitive exclusion"],
           concepts: [
             "Species interactions: predation, parasitism, mutualism, commensalism, competition",
             "Resource partitioning (temporal, spatial, morphological) reduces competition",
@@ -275,6 +276,7 @@
         },
         {
           id: "2.4", name: "Ecological Tolerance", w: 2,
+          design: "Design an experiment to determine the range of water temperatures that brine shrimp (or another aquatic organism) can tolerate. Identify the hypothesis, the independent variable, the dependent variable, a control, and one variable that should be held constant.",
           kw: ["ecological tolerance", "range of tolerance", "zone of physiological stress", "zone of intolerance", "optimal range", "tolerance"],
           concepts: [
             "Optimal range, zones of physiological stress, zones of intolerance",
@@ -355,6 +357,7 @@
       topics: [
         {
           id: "3.1", name: "Generalist and Specialist Species", w: 2,
+          design: "Design an experiment to compare how a generalist and a specialist insect species respond to a change in available food plants. Identify the hypothesis, the independent variable, the dependent variable, a control, and one variable that should be held constant.",
           kw: ["generalist", "specialist", "broad niche", "narrow niche"],
           concepts: [
             "Generalists: broad niche, tolerate varied conditions (raccoons, cockroaches)",
@@ -373,6 +376,7 @@
         },
         {
           id: "3.2", name: "K-Selected and r-Selected Species", w: 3,
+          design: "Design an experiment to compare the population growth of an r-selected organism (such as fruit flies) under high and low food availability. Identify the hypothesis, the independent variable, the dependent variable, a control, and one variable that should be held constant.",
           kw: ["k-selected", "r-selected", "k selected", "r selected", "reproductive strategy", "parental care", "many offspring"],
           concepts: [
             "r-selected: many offspring, little parental care, short lifespan, early maturity",
@@ -409,6 +413,7 @@
         },
         {
           id: "3.4", name: "Carrying Capacity", w: 3,
+          design: "Design an experiment to determine how the amount of nutrients affects the carrying capacity of a yeast or duckweed population. Identify the hypothesis, the independent variable, the dependent variable, a control, and one variable that should be held constant.",
           kw: ["carrying capacity", "overshoot", "die-off", "dieoff", "limiting factor", "density-dependent", "density-independent"],
           concepts: [
             "Carrying capacity (K) is the max population the environment can sustain",
@@ -427,7 +432,8 @@
         },
         {
           id: "3.5", name: "Population Growth and Resource Availability", w: 3,
-          kw: ["exponential growth", "logistic growth", "j-curve", "s-curve", "j curve", "s curve", "biotic potential", "population growth"],
+          design: "Design an experiment to measure how a population of duckweed grows over time when nutrients are limited compared with when they are unlimited. Identify the hypothesis, the independent variable, the dependent variable, a control, and one variable that should be held constant.",
+          kw: ["exponential growth", "logistic growth", "j-curve", "s-curve", "j curve", "s curve", "biotic potential", "population growth", "logistic", "logistical", "carrying capacity graph"],
           concepts: [
             "Exponential growth (J-curve) occurs with unlimited resources",
             "Logistic growth (S-curve) levels off at carrying capacity",
@@ -445,8 +451,8 @@
           calc: "Doubling time = 70 / growth rate (%)"
         },
         {
-          id: "3.6", name: "Age Structure Diagrams", w: 4,
-          kw: ["age structure", "population pyramid", "age-structure", "prereproductive", "postreproductive", "reproductive age", "cohort"],
+          id: "3.6", name: "Age Structure Diagrams", w: 4, noLab: true,
+          kw: ["age structure", "population pyramid", "age-structure", "prereproductive", "postreproductive", "reproductive age", "cohort", "age pyramid", "aging population", "aging", "elderly", "dependency ratio", "graying"],
           concepts: [
             "Pyramid (wide base) = rapid growth; column = stable; inverted/narrow base = declining",
             "Read cohorts: pre-reproductive (0-14), reproductive (15-44), post-reproductive (45+)",
@@ -463,8 +469,8 @@
           ]
         },
         {
-          id: "3.7", name: "Total Fertility Rate", w: 3,
-          kw: ["total fertility rate", "tfr", "replacement level", "replacement fertility", "fertility", "infant mortality"],
+          id: "3.7", name: "Total Fertility Rate", w: 3, noLab: true,
+          kw: ["total fertility rate", "tfr", "replacement level", "replacement fertility", "fertility", "infant mortality", "female education", "education of women", "role of women", "women", "woman", "workforce", "working force", "family planning", "contraception"],
           concepts: [
             "TFR = average number of children per woman in her lifetime",
             "Replacement-level fertility ~2.1 (higher in developing countries due to infant mortality)",
@@ -481,8 +487,8 @@
           ]
         },
         {
-          id: "3.8", name: "Human Population Dynamics", w: 4,
-          kw: ["birth rate", "death rate", "crude birth rate", "crude death rate", "immigration", "emigration", "growth rate", "malthus", "doubling time", "rule of 70", "human population"],
+          id: "3.8", name: "Human Population Dynamics", w: 4, noLab: true,
+          kw: ["birth rate", "death rate", "crude birth rate", "crude death rate", "immigration", "emigration", "growth rate", "malthus", "doubling time", "rule of 70", "human population", "population increase", "population change", "population growth rate"],
           concepts: [
             "Growth rate (%) = (CBR - CDR) / 10 when rates are per 1,000",
             "Population change = (births + immigration) - (deaths + emigration)",
@@ -500,8 +506,8 @@
           calc: "Growth rate % = (CBR - CDR)/10; doubling = 70/rate"
         },
         {
-          id: "3.9", name: "Demographic Transition", w: 4,
-          kw: ["demographic transition", "preindustrial", "pre-industrial", "transitional", "industrial", "postindustrial", "post-industrial", "stage 1", "stage 2", "stage 3", "stage 4"],
+          id: "3.9", name: "Demographic Transition", w: 4, noLab: true,
+          kw: ["demographic transition", "preindustrial", "pre-industrial", "transitional", "industrial", "postindustrial", "post-industrial", "stage 1", "stage 2", "stage 3", "stage 4", "industrial population", "industrialization"],
           concepts: [
             "Stage 1 (pre-industrial): high CBR and CDR; Stage 2: CDR drops (fastest growth)",
             "Stage 3 (industrial): CBR drops; Stage 4 (post-industrial): low CBR and CDR",

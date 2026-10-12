@@ -10,7 +10,7 @@
       bigIdea: "Earth's geology, soil, atmosphere, and climate shape where life and resources exist.",
       topics: [
         {
-          id: "4.1", name: "Plate Tectonics", w: 3,
+          id: "4.1", name: "Plate Tectonics", w: 3, noLab: true,
           kw: ["plate tectonics", "plate boundary", "convergent", "divergent", "transform", "subduction", "earthquake", "volcano", "ring of fire", "hot spot", "mid-ocean ridge", "tectonic"],
           concepts: [
             "Convergent (subduction, mountains, volcanoes), divergent (ridges, rift valleys), transform (earthquakes)",
@@ -46,6 +46,7 @@
         },
         {
           id: "4.3", name: "Soil Composition and Properties", w: 4,
+          design: "Design an experiment to compare the permeability of sand, silt, and clay soils. Identify the hypothesis, the independent variable, the dependent variable, a control, and one variable that should be held constant.",
           kw: ["soil texture", "soil triangle", "sand", "silt", "clay", "loam", "porosity", "permeability", "water holding capacity", "soil fertility", "soil ph"],
           concepts: [
             "Texture triangle: % sand, silt, clay (loam is ideal for agriculture)",
@@ -152,7 +153,7 @@
           ]
         },
         {
-          id: "4.9", name: "El Nino and La Nina", w: 2,
+          id: "4.9", name: "El Nino and La Nina", w: 2, noLab: true,
           kw: ["el nino", "la nina", "enso", "upwelling", "southern oscillation", "el niño", "la niña", "walker circulation"],
           concepts: [
             "El Nino: weakened trade winds, warm water shifts east, reduced upwelling off South America",
@@ -178,7 +179,7 @@
       bigIdea: "Human land and water use has consequences that sustainable practices can reduce.",
       topics: [
         {
-          id: "5.1", name: "The Tragedy of the Commons", w: 3,
+          id: "5.1", name: "The Tragedy of the Commons", w: 3, noLab: true,
           kw: ["tragedy of the commons", "commons", "common resource", "shared resource", "overexploitation", "overgrazing", "garrett hardin"],
           concepts: [
             "Individuals acting in self-interest deplete shared resources",
@@ -268,6 +269,7 @@
         },
         {
           id: "5.6", name: "Pest Control Methods", w: 3,
+          design: "Design an experiment to test whether a new pesticide reduces crop damage without harming earthworms in the soil. Identify the hypothesis, the independent variable, the dependent variable, a control, and one variable that should be held constant.",
           kw: ["pesticide", "pest control", "herbicide", "insecticide", "pesticide resistance", "pesticide treadmill", "ddt", "neonicotinoid"],
           concepts: [
             "Pesticides increase yields but kill non-target species and pollinators",
@@ -488,7 +490,7 @@
       bigIdea: "Energy choices affect the environment; conservation and renewables reduce impacts.",
       topics: [
         {
-          id: "6.1", name: "Renewable and Nonrenewable Resources", w: 2,
+          id: "6.1", name: "Renewable and Nonrenewable Resources", w: 2, noLab: true,
           kw: ["renewable", "nonrenewable", "non-renewable", "depletable", "nondepletable", "finite resource"],
           concepts: [
             "Nonrenewable: fossil fuels, uranium (finite)",
@@ -506,7 +508,7 @@
           ]
         },
         {
-          id: "6.2", name: "Global Energy Consumption", w: 2,
+          id: "6.2", name: "Global Energy Consumption", w: 2, noLab: true,
           kw: ["energy consumption", "per capita energy", "developed countries", "developing countries", "energy demand"],
           concepts: [
             "Developed countries use far more energy per capita",
@@ -542,7 +544,7 @@
           ]
         },
         {
-          id: "6.4", name: "Distribution of Natural Energy Resources", w: 1,
+          id: "6.4", name: "Distribution of Natural Energy Resources", w: 1, noLab: true,
           kw: ["distribution of energy", "energy reserves", "oil reserves", "geopolitics"],
           concepts: [
             "Fossil fuel reserves are unevenly distributed",

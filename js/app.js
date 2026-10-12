@@ -80,7 +80,9 @@
       basis = "Based on " + r.frqs.length + " pasted FRQ(s) (" + r.relevantCount + " touch Unit " + r.unit.id +
         "), AP exam topic frequencies, and her style: about " + r.style.avgParts + " parts per FRQ, favorite verbs " +
         (r.style.topVerbs.slice(0, 3).map(v => "<b>" + esc(v) + "</b>").join(", ") || "n/a") +
-        ", calculations in " + Math.round(r.style.calcRate * 100) + "% of FRQs.";
+        ", calculations in " + Math.round(r.style.calcRate * 100) + "% of FRQs" +
+        (r.style.graphN ? ", graphing in " + r.style.graphN : "") +
+        (r.style.starredN ? ", " + r.style.starredN + " starred (***) FRQ" + (r.style.starredN === 1 ? "" : "s") + " counted double" : "") + ".";
     }
     let off = "";
     if (r.offUnit.length) {
@@ -126,7 +128,7 @@
         "<div class='frq-head'><div><h3>Predicted FRQ " + p.rank + ": " + esc(p.anchor.name) + "</h3>" +
         "<p class='meta'>" + esc(p.typeLabel) + " · Topic " + esc(p.anchor.id) +
         (p.partner ? " + " + esc(p.partner.id) + " " + esc(p.partner.name) : "") + "</p></div>" +
-        "<div class='pills'>" + mathPill(p.math) + "<span class='pill'>" + p.likelihood + "% likely</span></div></div>" +
+        "<div class='pills'>" + mathPill(p.math) + (p.graphing ? "<span class='pill should'>Graphing</span>" : "") + "<span class='pill'>" + p.likelihood + "% likely</span></div></div>" +
         "<p class='scenario'>" + esc(p.scenario) + "</p><ol>" + parts + "</ol>" +
         (p.math.kinds.length ? "<p class='math-note'><b>Formula to know:</b> " + p.math.kinds.map(esc).join("; ") + "</p>" : "") +
         "<p class='why'>Why: " + esc(p.reasons.join("; ") || "core CED topic") + "." + esc(resembles) + "</p></article>";

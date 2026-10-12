@@ -109,3 +109,24 @@ test("years and counts alone do not count as math", () => {
   const f = engine.analyze("In 1992 the cod fishery collapsed after 1950s and 1970s growth; by 2000 and 2010 it had not recovered. Explain why.")[0];
   assert.strictEqual(f.hasCalc, false);
 });
+
+test("reads a teacher's list of AP FRQ citations", () => {
+  const list = [
+    "1. 2022 Set 2 # 3 Coal ash and population change",
+    "2. 2008 #4 TFR & Human Population Graphing",
+    "3. 2000 #4 Age Pyramid",
+    "4. ***HUG 2008 #3 Increase in Female Education in LDC causes",
+    "5. APB 2019 #2 Competitive Exclusion Experimental Design and Graphing"
+  ].join("\n");
+  const r = engine.predict(list, { unitId: 3, numFRQs: 3 });
+  assert.strictEqual(r.frqs.length, 5);
+  assert.strictEqual(r.frqs[0].hasCalc, true, "2020+ APES Question 3 has math");
+  assert.strictEqual(r.frqs[3].starred, true);
+  assert.strictEqual(r.frqs[4].type, "design");
+  assert.strictEqual(r.style.graphN, 2);
+  assert.ok(r.topics[0].reasons.some(x => x.includes("starred")) || r.topics.some(t => t.reasons.some(x => x.includes("starred"))));
+  for (const p of r.predicted.filter(p => p.type === "design")) {
+    assert.ok(!r.unit.topics.find(t => t.id === p.anchor.id).noLab, "design FRQs use lab-suitable topics");
+    assert.ok(p.graphing);
+  }
+});
