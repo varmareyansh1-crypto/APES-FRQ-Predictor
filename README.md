@@ -22,7 +22,9 @@ tells you what to study and where to study it.
    APES exam Question 1 is always experimental design and Question 3 always has math.
    Titles alone can't show what's inside a question, so pasting the full question text
    gives a better prediction.
-4. Set **FRQs on the test** and **Teacher style**:
+4. Set **FRQs on the test**, **She mostly uses FRQs from** and **Teacher style**:
+   - The year setting defaults to 2020–2025. FRQs from those years count 3× and
+     older ones count less. FRQs without a year count normally.
    - Slide right if Mrs. Davis tends to reuse the same topics or questions.
    - Slide left if she rotates to new topics on each test.
 5. Click **Predict FRQs** (or press Ctrl/Cmd + Enter).

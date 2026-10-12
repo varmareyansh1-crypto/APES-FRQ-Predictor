@@ -8,7 +8,7 @@
 
   const $ = id => document.getElementById(id);
   const els = {
-    unit: $("unit"), numFRQs: $("numFRQs"), reuse: $("reuse"), reuseLabel: $("reuseLabel"),
+    unit: $("unit"), numFRQs: $("numFRQs"), years: $("years"), reuse: $("reuse"), reuseLabel: $("reuseLabel"),
     input: $("frqInput"), stats: $("inputStats"), status: $("status"), results: $("results"),
     summary: $("summary")
   };
@@ -43,9 +43,10 @@
   if (prefs.unit) els.unit.value = prefs.unit;
   if (prefs.numFRQs) els.numFRQs.value = prefs.numFRQs;
   if (prefs.reuse != null) els.reuse.value = prefs.reuse;
+  if (prefs.years != null) els.years.value = prefs.years;
 
   function savePrefs() {
-    writeJSON(PREFS_KEY, { unit: els.unit.value, numFRQs: els.numFRQs.value, reuse: els.reuse.value });
+    writeJSON(PREFS_KEY, { unit: els.unit.value, numFRQs: els.numFRQs.value, reuse: els.reuse.value, years: els.years.value });
   }
 
   function updateReuseLabel() {
@@ -93,14 +94,24 @@
       "<p><b>Unit " + r.unit.id + ": " + esc(r.unit.name) + "</b> — " + esc(r.unit.bigIdea) + "</p>" +
       "<p>Top topics to expect: " + top3 + ".</p>" +
       "<p>" + mathOutlookText(r.mathOutlook, r.numFRQs) + "</p>" +
-      "<p class='hint'>" + basis + "</p>" + off;
+      "<p class='hint'>" + basis + "</p>" + yearsText(r) + off;
+  }
+
+  function yearsText(r) {
+    if (!r.years || !r.frqs.length) return "";
+    const range = r.years.from + "–" + r.years.to;
+    if (!r.inYears.length) {
+      return "<p class='hint'>None of your FRQs are from " + range + ". Add recent ones for a better prediction; FRQs without a year count normally.</p>";
+    }
+    return "<p class='hint'>She mostly uses " + range + " FRQs, so FRQ " + r.inYears.map(f => "#" + f.index + " (" + f.year + ")").join(", ") +
+      " count 3× and older ones count less.</p>";
   }
 
   function mathOutlookText(m, numFRQs) {
     const cls = m.level === "Likely" ? "math" : m.level === "Possible" ? "should" : "nomath";
     let text = "<b>Math on this test:</b> <span class='pill " + cls + "'>" + m.level + " · " + m.chance + "%</span> chance at least one of the " +
       numFRQs + " FRQ" + (numFRQs === 1 ? "" : "s") + " has a calculation";
-    if (m.teacherTotal) text += " (" + m.teacherWithMath + " of your " + m.teacherTotal + " pasted FRQs had math)";
+    if (m.teacherTotal) text += " (" + m.teacherWithMath + " of your " + m.teacherTotal + " pasted FRQs had math" + (m.weighted ? ", recent ones counted more" : "") + ")";
     text += ".";
     if (m.expect.length && m.level !== "Unlikely") {
       text += " Most likely math: " + m.expect.map(e => esc(e.calc)).join("; ") + ".";
@@ -215,13 +226,19 @@
     return true;
   }
 
+  function parseYears(value) {
+    const m = String(value || "").match(/^(\d{4})-(\d{4})$/);
+    return m ? { from: Number(m[1]), to: Number(m[2]) } : null;
+  }
+
   function runPrediction(scroll) {
     if (restoreBackup(els.input.value.trim())) return;
     savePrefs();
     const r = engine.predict(els.input.value, {
       unitId: Number(els.unit.value),
       numFRQs: Number(els.numFRQs.value),
-      reuse: Number(els.reuse.value) / 100
+      reuse: Number(els.reuse.value) / 100,
+      years: parseYears(els.years.value)
     });
     renderSummary(r);
     renderPredicted(r);
@@ -341,6 +358,7 @@
   els.unit.addEventListener("change", () => { savePrefs(); if (!els.results.hidden) runPrediction(); });
   els.numFRQs.addEventListener("change", () => { savePrefs(); if (!els.results.hidden) runPrediction(); });
   els.reuse.addEventListener("change", () => { savePrefs(); if (!els.results.hidden) runPrediction(); });
+  els.years.addEventListener("change", () => { savePrefs(); if (!els.results.hidden) runPrediction(); });
   document.querySelectorAll(".tabs button").forEach(b => b.addEventListener("click", () => showTab(b.dataset.tab)));
   els.input.addEventListener("keydown", e => { if ((e.ctrlKey || e.metaKey) && e.key === "Enter") runPrediction(); });
 

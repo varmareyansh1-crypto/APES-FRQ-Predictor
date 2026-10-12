@@ -130,3 +130,39 @@ test("reads a teacher's list of AP FRQ citations", () => {
     assert.ok(p.graphing);
   }
 });
+
+test("FRQs from her usual years count more", () => {
+  const list = [
+    "1. 2022 Set 2 # 3 Coal ash and population change",
+    "2. HUG 2021 Set 2 # 1 TFR and role of women",
+    "3. 2000 #4 Age Pyramid",
+    "4. HUG 2013 #2 Aging Populations Worldwide",
+    "5. HUG 2010 #3 Population Pyramids and Demographic Transition"
+  ].join("\n");
+  const any = engine.predict(list, { unitId: 3, numFRQs: 3 });
+  const recent = engine.predict(list, { unitId: 3, numFRQs: 3, years: { from: 2020, to: 2025 } });
+  assert.deepStrictEqual(recent.frqs.map(f => f.year), [2022, 2021, 2000, 2013, 2010]);
+  assert.deepStrictEqual(recent.inYears.map(f => f.index), [1, 2]);
+  assert.strictEqual(recent.frqs[0].type, "calc");
+  const p = (r, id) => r.topics.find(t => t.topic.id === id).probability;
+  assert.ok(p(recent, "3.6") < p(any, "3.6"), "older age-pyramid FRQs count less");
+  assert.ok(recent.mathOutlook.chance > any.mathOutlook.chance, "the recent math FRQ counts more");
+  assert.ok(recent.predicted.filter(x => x.isCore).some(x => x.math.hasMath));
+});
+
+test("a part that uses a previous answer always follows that part", () => {
+  const lists = ["", "1. 2022 Set 2 # 3 Coal ash and population change\n2. HUG 2021 Set 2 # 1 TFR and role of women"];
+  for (const u of engine.units) {
+    for (const text of lists) {
+      for (const years of [null, { from: 2020, to: 2025 }]) {
+        for (const p of engine.predict(text, { unitId: u.id, numFRQs: 3, years }).predicted) {
+          p.parts.forEach((part, k) => {
+            if (!/^using your answer/i.test(part.text)) return;
+            const owner = u.topics.find(t => t.parts.includes(part.text));
+            assert.ok(k > 0 && p.parts[k - 1].text === owner.parts[owner.parts.indexOf(part.text) - 1], "unit " + u.id + " FRQ " + p.rank);
+          });
+        }
+      }
+    }
+  }
+});

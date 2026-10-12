@@ -169,6 +169,13 @@
     return { year: Number(m[1]), question: Number(m[2]) };
   }
 
+  /** Exam year in a citation like "HUG 2021 Set 2 # 1" or "2022 #3", else null. */
+  function citationYear(text) {
+    const first = String(text).split("\n").find(l => l.trim()) || "";
+    const m = first.match(/^[^a-z]*(?:[a-z]{2,5}\s+)?((?:19|20)\d\d)\b/i);
+    return m ? Number(m[1]) : null;
+  }
+
   function detectType(text, hasCalc) {
     const t = normalize(text);
     if (/\b(hypothesis|independent variable|dependent variable|control group|controlled variable|experiment|investigation|design)\b/.test(t)) return "design";
@@ -242,9 +249,14 @@
           parts: countParts(body),
           hasCalc,
           hasGraph: GRAPH_WORDS.test(body),
+          year: citationYear(body),
+          weight: 1,
           // Teachers mark must-do questions with *** (or more).
           starred: /\*{2,}/.test(body),
-          type: cite && cite.year >= 2020 && cite.question === 1 ? "design" : detectType(body, hasCalc),
+          // On the 2020+ APES exam, Question 1 is always design and Question 3 always has calculations.
+          type: cite && cite.year >= 2020 && cite.question === 1 ? "design"
+            : cite && cite.year >= 2020 && cite.question === 3 ? "calc"
+            : detectType(body, hasCalc),
           vec: vector(body)
         };
       });
@@ -253,23 +265,28 @@
     /** Summarize the teacher's FRQ-writing style across all pasted FRQs. */
     function teacherStyle(frqs) {
       const verbTotals = {};
-      let parts = 0, partsN = 0, calcN = 0, graphN = 0, starredN = 0;
+      let parts = 0, partsN = 0, calcN = 0, graphN = 0, starredN = 0, calcW = 0, graphW = 0, totalW = 0;
       const typeCounts = { design: 0, problem: 0, calc: 0 };
       for (const f of frqs) {
         for (const v in f.verbs) verbTotals[v] = (verbTotals[v] || 0) + f.verbs[v];
         if (f.parts) { parts += f.parts; partsN++; }
-        if (f.hasCalc) calcN++;
-        if (f.hasGraph) graphN++;
+        const w = f.weight == null ? 1 : f.weight;
+        totalW += w;
+        if (f.hasCalc) { calcN++; calcW += w; }
+        if (f.hasGraph) { graphN++; graphW += w; }
         if (f.starred) starredN++;
-        typeCounts[f.type]++;
+        typeCounts[f.type] += w;
       }
       const topVerbs = Object.keys(verbTotals).sort((a, b) => verbTotals[b] - verbTotals[a]);
       return {
         verbTotals,
         topVerbs,
         avgParts: partsN ? Math.round(parts / partsN) : 4,
-        calcRate: frqs.length ? calcN / frqs.length : 0.5,
-        graphRate: frqs.length ? graphN / frqs.length : 0,
+        calcRate: totalW ? calcW / totalW : 0.5,
+        graphRate: totalW ? graphW / totalW : 0,
+        calcN,
+        calcW,
+        totalW,
         graphN,
         starredN,
         typeCounts,
@@ -290,6 +307,13 @@
       const numFRQs = clamp(Number(options.numFRQs) || 3, 1, 6);
       const reuse = options.reuse == null ? 0.6 : clamp(Number(options.reuse), 0, 1);
       const frqs = analyze(text);
+      // FRQs from the years she usually draws from count more; older ones count less.
+      const years = options.years && options.years.from ? options.years : null;
+      for (const f of frqs) {
+        if (!years || f.year == null) f.weight = 1;
+        else f.weight = f.year >= years.from && f.year <= (years.to || 9999) ? 3 : 0.5;
+      }
+      const inYears = years ? frqs.filter(f => f.weight === 3) : [];
       const style = teacherStyle(frqs);
       const random = rng(hashString(String(text) + "|" + unit.id + "|" + numFRQs + "|" + reuse));
 
@@ -300,13 +324,15 @@
       // Teacher signal per topic (only counting hits within this unit).
       const teacherRaw = {};
       const starredTopics = new Set();
+      const recentTopics = new Set();
       for (const f of frqs) {
         const unitHits = f.hits.filter(h => h.unitId === unit.id);
         const total = unitHits.reduce((s, h) => s + h.score, 0) || 1;
-        const weight = f.starred ? 2 : 1;
+        const weight = (f.starred ? 2 : 1) * f.weight;
         for (const h of unitHits) {
           teacherRaw[h.topicId] = (teacherRaw[h.topicId] || 0) + weight * h.score / total;
           if (f.starred) starredTopics.add(h.topicId);
+          if (years && f.weight === 3) recentTopics.add(h.topicId);
         }
       }
       const teacherMax = Math.max(0, ...Object.values(teacherRaw));
@@ -339,6 +365,7 @@
         if (teacher >= 0.5) reasons.push("heavily featured in your teacher's FRQs");
         else if (teacher > 0) reasons.push("appears in your teacher's FRQs");
         if (starredTopics.has(topic.id)) reasons.push("your teacher starred (***) an FRQ on this topic");
+        if (recentTopics.has(topic.id)) reasons.push("matches a " + years.from + "–" + (years.to || "now") + " FRQ on her list");
         if (gap && reuse < 0.5 && topic.w >= 3) reasons.push("core topic not yet tested — likely rotation pick");
         if (topic.calc) reasons.push("has a standard calculation (" + topic.calc + ")");
         return { topic, prior, teacher, gap, score, reasons };
@@ -372,6 +399,8 @@
         studyPlan,
         sources: buildSources(unit, scored),
         mathOutlook,
+        years,
+        inYears: inYears.map(f => ({ index: f.index, year: f.year, title: f.title })),
         tips: buildTips(style)
       };
     }
@@ -484,6 +513,20 @@
           else if (type === "calc") parts.splice(Math.min(1, parts.length), 0, required);
           else parts.push(required);
         }
+        // A part that builds on the previous answer ("Using your answer, ...") needs that part right before it.
+        for (let k = 0; k < parts.length; k++) {
+          const current = parts[k];
+          if (!/^using your answer/i.test(current.text)) continue;
+          const owner = unit.topics.find(t => t.parts.includes(current.text));
+          const before = owner && owner.parts[owner.parts.indexOf(current.text) - 1];
+          if (!before || (parts[k - 1] && parts[k - 1].text === before)) continue;
+          const at = parts.findIndex(p => p.text === before);
+          const moved = at !== -1 ? parts.splice(at, 1)[0] : { text: before, context: null };
+          k = parts.indexOf(current);
+          parts.splice(k, 0, moved);
+          k++;
+        }
+
         // She assigns graphing, so add a graphing part to design and calculation FRQs.
         const wantsGraph = style.n > 0 && style.graphRate >= 0.1 && (type === "design" || type === "calc");
         if (wantsGraph) parts.splice(Math.min(type === "design" ? 1 : 2, parts.length), 0, { text: graphPart(type), context: null });
@@ -539,13 +582,14 @@
       // and units with more calculation topics lean on math more.
       const baseline = calcTopics.length ? clamp(0.25 + 0.05 * calcTopics.length, 0.25, 0.45) : 0.1;
       const withMath = frqs.filter(f => f.hasCalc).length;
-      const perFRQ = (withMath + baseline * 2) / (frqs.length + 2);
+      const perFRQ = (style.calcW + baseline * 2) / (style.totalW + 2);
       const chance = Math.round(clamp(1 - Math.pow(1 - perFRQ, numFRQs), 0.03, 0.97) * 100);
       const level = chance >= 70 ? "Likely" : chance >= 40 ? "Possible" : "Unlikely";
       return {
         chance,
         level,
         teacherWithMath: withMath,
+        weighted: frqs.some(f => f.weight !== 1),
         teacherTotal: frqs.length,
         expect: calcTopics.slice(0, 3).map(s => ({ id: s.topic.id, name: s.topic.name, calc: s.topic.calc, probability: s.probability }))
       };
