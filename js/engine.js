@@ -120,7 +120,7 @@
       const byBlank = blocks[0].split(/\n\s*\n\s*\n+/).filter(b => b.trim().length > 40);
       if (byBlank.length > 1) return byBlank.map(b => b.trim());
     }
-    return blocks.map(b => b.trim()).filter(b => b.length > 15);
+    return blocks.map(b => b.trim()).filter(b => b.length > 8 && /[a-z]{3}/i.test(b));
   }
 
   function countParts(text) {
@@ -153,7 +153,7 @@
   function detectCalc(text) {
     const t = normalize(text);
     const numbers = (t.match(/\b\d[\d,]*(?:\.\d+)?\b/g) || []).length;
-    const calcWords = /\b(calculate|show your work|show all work|percent change|per capita|kwh|kilowatt|doubling time|half-life|half life|mg kg|how many|how much)\b/.test(t);
+    const calcWords = /\b(calculate|show your work|show all work|percent change|per capita|kwh|kilowatt|doubling time|half-life|half life|mg kg|how many|how much|math)\b/.test(t);
     const quantityWords = /(%|\b(percent|rate|per|total|kcal|ppm|ppb|kg|kwh|liters?|gallons?|tons?|hectares?|acres?|km|meters?)\b)/.test(t);
     return calcWords || (numbers >= 4 && quantityWords);
   }
@@ -301,8 +301,20 @@
      */
     function predict(text, options) {
       options = options || {};
-      const unit = getUnit(options.unitId);
-      if (!unit) throw new Error("Unknown unit: " + options.unitId);
+      const base = getUnit(options.unitId);
+      if (!base) throw new Error("Unknown unit: " + options.unitId);
+      // A teacher's unit can cover more than one CED unit (e.g. Units 4 and 5 together).
+      const extraUnits = (options.alsoUnits || []).map(getUnit).filter(u => u && u.id !== base.id);
+      const unitIds = new Set([base.id].concat(extraUnits.map(u => u.id)));
+      const unit = extraUnits.length ? {
+        id: [base.id].concat(extraUnits.map(u => u.id)).join(" + "),
+        name: [base.name].concat(extraUnits.map(u => u.name)).join(" + "),
+        examWeight: [base.examWeight].concat(extraUnits.map(u => u.examWeight)).join(" + "),
+        bigIdea: [base.bigIdea].concat(extraUnits.map(u => u.bigIdea)).join(" "),
+        topics: base.topics.concat(...extraUnits.map(u => u.topics)),
+        ids: [...unitIds]
+      } : Object.assign({ ids: [base.id] }, base);
+      const inUnit = id => unitIds.has(id);
 
       const numFRQs = clamp(Number(options.numFRQs) || 3, 1, 6);
       const reuse = options.reuse == null ? 0.6 : clamp(Number(options.reuse), 0, 1);
@@ -318,15 +330,15 @@
       const random = rng(hashString(String(text) + "|" + unit.id + "|" + numFRQs + "|" + reuse));
 
       // Which pasted FRQs relate to this unit?
-      const relevant = frqs.filter(f => f.unitScores[unit.id] > 0);
-      const offUnit = frqs.filter(f => f.bestUnit && f.bestUnit !== unit.id);
+      const relevant = frqs.filter(f => unit.ids.some(id => f.unitScores[id] > 0));
+      const offUnit = frqs.filter(f => f.bestUnit && !inUnit(f.bestUnit));
 
       // Teacher signal per topic (only counting hits within this unit).
       const teacherRaw = {};
       const starredTopics = new Set();
       const recentTopics = new Set();
       for (const f of frqs) {
-        const unitHits = f.hits.filter(h => h.unitId === unit.id);
+        const unitHits = f.hits.filter(h => inUnit(h.unitId));
         const total = unitHits.reduce((s, h) => s + h.score, 0) || 1;
         const weight = (f.starred ? 2 : 1) * f.weight;
         for (const h of unitHits) {
@@ -342,9 +354,24 @@
       const crossRaw = {};
       for (const f of relevant) {
         for (const h of f.hits) {
-          if (h.unitId !== unit.id) crossRaw[h.topicId] = (crossRaw[h.topicId] || 0) + h.score;
+          if (!inUnit(h.unitId)) crossRaw[h.topicId] = (crossRaw[h.topicId] || 0) + h.score;
         }
       }
+
+      // Labs and activities done in class point to likely design questions.
+      const labRaw = {};
+      if (options.labs && String(options.labs).trim()) {
+        for (const h of topicHits(options.labs)) if (inUnit(h.unitId)) labRaw[h.topicId] = (labRaw[h.topicId] || 0) + h.score;
+      }
+      const labMax = Math.max(0, ...Object.values(labRaw));
+
+      // Topics her experimental-design FRQs were about.
+      const designRaw = {};
+      for (const f of frqs) {
+        if (f.type !== "design") continue;
+        for (const h of f.hits) if (inUnit(h.unitId)) designRaw[h.topicId] = (designRaw[h.topicId] || 0) + h.score * f.weight;
+      }
+      const designMax = Math.max(0, ...Object.values(designRaw));
 
       const wSum = unit.topics.reduce((s, t) => s + t.w, 0);
       const wMax = Math.max(...unit.topics.map(t => t.w));
@@ -358,17 +385,21 @@
         const prior = (topic.w + (topic.calc ? 0.25 : 0)) / (wMax + 0.25);
         const teacher = hasTeacherData ? (teacherRaw[topic.id] || 0) / teacherMax : 0;
         const gap = hasTeacherData && !teacherRaw[topic.id] ? prior : 0;
-        const score = W.prior * prior + W.teacher * teacher + W.gap * gap;
+        const lab = labMax ? (labRaw[topic.id] || 0) / labMax : 0;
+        const designHit = designMax ? (designRaw[topic.id] || 0) / designMax : 0;
+        const score = W.prior * prior + W.teacher * teacher + W.gap * gap + 0.35 * lab;
         const reasons = [];
         if (topic.w >= 4) reasons.push("frequently tested on AP FRQs");
         else if (topic.w === 3) reasons.push("regularly tested on AP FRQs");
         if (teacher >= 0.5) reasons.push("heavily featured in your teacher's FRQs");
         else if (teacher > 0) reasons.push("appears in your teacher's FRQs");
+        if (lab >= 0.5) reasons.push("you did a lab or activity on this in class");
         if (starredTopics.has(topic.id)) reasons.push("your teacher starred (***) an FRQ on this topic");
         if (recentTopics.has(topic.id)) reasons.push("matches a " + years.from + "–" + (years.to || "now") + " FRQ on her list");
         if (gap && reuse < 0.5 && topic.w >= 3) reasons.push("core topic not yet tested — likely rotation pick");
         if (topic.calc) reasons.push("has a standard calculation (" + topic.calc + ")");
-        return { topic, prior, teacher, gap, score, reasons };
+        if (designHit >= 0.5) reasons.push("matches her experimental design FRQs");
+        return { topic, prior, teacher, gap, lab, designHit, score, reasons };
       });
 
       // Convert to probability of appearing in at least one FRQ part.
@@ -454,14 +485,21 @@
         for (let i = 0; i < total; i++) typeOrder.push(ap[i % ap.length]);
       }
 
-      // A design FRQ needs a topic students could actually test in a lab.
-      const usedAnchors = new Set();
-      for (let i = 0; i < anchors.length; i++) {
-        if (typeOrder[i] === "design" && anchors[i].topic.noLab) {
-          const swap = scored.find(s => !s.topic.noLab && !anchors.includes(s));
-          if (swap) anchors[i] = swap;
+      // Design FRQs pick first: a lab-suitable topic, preferring ones that match her
+      // design FRQs and the labs done in class. Other FRQs then take the next-best topics.
+      const designSlots = typeOrder.map((t, i) => t === "design" ? i : -1).filter(i => i >= 0);
+      const designPicks = [];
+      for (let n = 0; n < designSlots.length; n++) {
+        const pool = scored.filter(s => !s.topic.noLab && !designPicks.includes(s));
+        const best = pool.reduce((a, b) => (b.designHit + b.lab > a.designHit + a.lab ? b : a), pool[0]);
+        if (best) designPicks.push(best);
+      }
+      if (designPicks.length) {
+        const rest = scored.filter(s => !designPicks.includes(s));
+        let r = 0, d = 0;
+        for (let i = 0; i < anchors.length; i++) {
+          anchors[i] = typeOrder[i] === "design" && designPicks[d] ? designPicks[d++] : rest[r++];
         }
-        usedAnchors.add(anchors[i].topic.id);
       }
 
       const partsWanted = clamp(style.avgParts || 4, 3, 6);
@@ -493,7 +531,9 @@
         }
 
         const parts = [];
-        const has = text => parts.some(p => p.text === text) || (required && required.text === text);
+        // A design FRQ already has its design part, so skip the topic's other "Design ..." prompts.
+        const has = text => parts.some(p => p.text === text) || (required && required.text === text) ||
+          (type === "design" && /^design\b/i.test(text));
         const room = partsWanted - (required ? 1 : 0);
         for (const text of pickParts(anchor.topic, style, Math.max(2, room - (partner ? 1 : 0)), random)) {
           if (!has(text)) parts.push({ text, context: null });
@@ -595,6 +635,10 @@
       };
     }
 
+    function unitMath(unit) {
+      return [].concat(...unit.ids.map(id => resources.mathByUnit[id] || []));
+    }
+
     function buildStudyPlan(unit, scored, style, crossRaw) {
       const tiers = scored.map((s, i) => {
         let tier;
@@ -623,10 +667,10 @@
         "Day 1: Learn the " + mustCount + " 'Must know' topics — read the concepts, then write each vocab term in a sentence.",
         "Day 2: Do the predicted FRQs (Most likely FRQs tab) under timed conditions (about 20 min each) without notes.",
         "Day 3: Grade yourself against the College Board scoring guidelines for similar past FRQs; redo any part you missed.",
-        "Day 4: Drill the unit math (" + (resources.mathByUnit[unit.id] || []).slice(0, 2).join("; ") + ") and the 'Should know' topics.",
+        "Day 4: Drill the unit math (" + unitMath(unit).slice(0, 2).join("; ") + ") and the 'Should know' topics.",
         "Night before: Skim 'Quick review' topics and re-read your corrected FRQs."
       ];
-      return { tiers, math: resources.mathByUnit[unit.id] || [], cross, schedule };
+      return { tiers, math: unitMath(unit), cross, schedule };
     }
 
     function buildSources(unit, scored) {

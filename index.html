@@ -43,12 +43,21 @@
             <option value="">Any year</option>
           </select>
         </label>
+        <fieldset class="field also-units">
+          <legend>Her unit also covers</legend>
+          <div id="alsoUnits" class="unit-chips"></div>
+        </fieldset>
         <label class="field grow">
           <span>Teacher style: <b id="reuseLabel">Mostly reuses topics</b></span>
           <input type="range" id="reuse" min="0" max="100" value="60" aria-describedby="reuseHelp">
           <small id="reuseHelp" class="hint">Left = rotates to new topics each test · Right = reuses the same topics/questions</small>
         </label>
       </div>
+
+      <label class="field labs-field" for="labs">
+        <span>Labs or activities you did in class (optional)</span>
+        <input type="text" id="labs" placeholder="e.g. soil lab, solar radiation activity">
+      </label>
 
       <label class="field" for="frqInput">
         <span>Past FRQs from Mrs. Davis (any unit — paste as many as you have)</span>

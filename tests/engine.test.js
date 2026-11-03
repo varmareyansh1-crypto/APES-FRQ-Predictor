@@ -166,3 +166,24 @@ test("a part that uses a previous answer always follows that part", () => {
     }
   }
 });
+
+test("combined units, labs, and short citation lines", () => {
+  const list = [
+    "1. 2021 Set 2 # 1 Soil Erosion Experimental Design",
+    "2. 2021 Set 1 # 2: Pesticides and Crop Rotation",
+    "3. 2016 #4 Soil",
+    "4. 2016 #2 Iron Ore Math Problem",
+    "5. 2014 #3 Plate Tectonics"
+  ].join("\n");
+  const r = engine.predict(list, { unitId: 4, alsoUnits: [5], numFRQs: 2, years: { from: 2020, to: 2025 }, labs: "soil lab, solar radiation activity" });
+  assert.strictEqual(r.frqs.length, 5, "short lines are kept");
+  assert.strictEqual(r.unit.id, "4 + 5");
+  assert.ok(r.topics.some(t => t.topic.id.startsWith("5.")), "Unit 5 topics included");
+  assert.strictEqual(r.frqs[3].hasCalc, true, "'Math Problem' counts as math");
+  assert.strictEqual(r.relevantCount, 5);
+  const design = r.predicted.find(p => p.isCore && p.type === "design");
+  assert.ok(design, "a core design FRQ");
+  assert.ok(["4.2", "4.3"].includes(design.anchor.id), "design FRQ is about soil");
+  assert.strictEqual(design.parts.filter(p => /^design\b/i.test(p.text)).length, 1, "only one design part");
+  assert.ok(r.topics.find(t => t.topic.id === "4.7").reasons.some(x => x.includes("lab")));
+});

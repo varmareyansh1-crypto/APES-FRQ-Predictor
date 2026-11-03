@@ -29,7 +29,8 @@
         },
         {
           id: "4.2", name: "Soil Formation and Erosion", w: 4,
-          kw: ["soil formation", "soil horizon", "o horizon", "a horizon", "b horizon", "c horizon", "topsoil", "parent material", "humus", "erosion", "weathering", "leaching"],
+          design: "Design an experiment to test how the slope of the land affects the amount of soil eroded by simulated rainfall. Identify the hypothesis, the independent variable, the dependent variable, a control, and one variable that should be held constant.",
+          kw: ["soil formation", "soil horizon", "o horizon", "a horizon", "b horizon", "c horizon", "topsoil", "parent material", "humus", "erosion", "weathering", "leaching", "soil erosion", "soil conservation"],
           concepts: [
             "Horizons: O (organic/humus), A (topsoil), E (leaching), B (subsoil), C (parent material), R (bedrock)",
             "Soil formation: weathering of parent material + organic matter; very slow",
@@ -47,7 +48,7 @@
         {
           id: "4.3", name: "Soil Composition and Properties", w: 4,
           design: "Design an experiment to compare the permeability of sand, silt, and clay soils. Identify the hypothesis, the independent variable, the dependent variable, a control, and one variable that should be held constant.",
-          kw: ["soil texture", "soil triangle", "sand", "silt", "clay", "loam", "porosity", "permeability", "water holding capacity", "soil fertility", "soil ph"],
+          kw: ["soil texture", "soil triangle", "sand", "silt", "clay", "loam", "porosity", "permeability", "water holding capacity", "soil fertility", "soil ph", "soil", "soil sample", "soil lab"],
           concepts: [
             "Texture triangle: % sand, silt, clay (loam is ideal for agriculture)",
             "Sand: high permeability, low water-holding; clay: low permeability, high water-holding",
@@ -101,6 +102,7 @@
         },
         {
           id: "4.6", name: "Watersheds", w: 3,
+          design: "Design an experiment to compare the turbidity of stream water below a logged area with stream water below an unlogged forest in the same watershed. Identify the hypothesis, the independent variable, the dependent variable, a control, and one variable that should be held constant.",
           kw: ["watershed", "drainage basin", "riparian", "headwaters", "river basin", "stream"],
           concepts: [
             "A watershed is all land that drains into a particular body of water",
@@ -118,6 +120,7 @@
         },
         {
           id: "4.7", name: "Solar Radiation and Earth's Seasons", w: 2,
+          design: "Design an experiment to test how the angle at which light strikes a surface affects how much the surface heats up, using a lamp and thermometers. Identify the hypothesis, the independent variable, the dependent variable, a control, and one variable that should be held constant.",
           kw: ["solar radiation", "insolation", "seasons", "axial tilt", "albedo", "angle of incidence", "equinox", "solstice"],
           concepts: [
             "Seasons are caused by Earth's 23.5 degree axial tilt, not distance from the sun",
@@ -232,7 +235,7 @@
         },
         {
           id: "5.4", name: "Impacts of Agricultural Practices", w: 4,
-          kw: ["agricultural practice", "tilling", "slash-and-burn", "fertilizer", "salinization", "desertification", "soil degradation", "tillage"],
+          kw: ["agricultural practice", "tilling", "slash-and-burn", "fertilizer", "salinization", "desertification", "soil degradation", "tillage", "arable land", "farmland", "agriculture", "agricultural", "organic farm", "organic farming", "dairy farm", "farm"],
           concepts: [
             "Tilling increases erosion and loss of organic matter",
             "Slash-and-burn releases CO2 and depletes soil nutrients",
@@ -305,7 +308,7 @@
         },
         {
           id: "5.8", name: "Impacts of Overfishing", w: 3,
-          kw: ["overfishing", "fishery", "bycatch", "trawling", "bottom trawling", "fishery collapse", "drift net", "longline", "fish stock"],
+          kw: ["overfishing", "fishery", "bycatch", "trawling", "bottom trawling", "fishery collapse", "drift net", "longline", "fish stock", "fish catch", "georges bank", "fishing"],
           concepts: [
             "Overfishing leads to fishery collapse (Atlantic cod)",
             "Bottom trawling destroys benthic habitat; bycatch kills non-target species",
@@ -322,7 +325,7 @@
         },
         {
           id: "5.9", name: "Impacts of Mining", w: 3,
-          kw: ["mining", "surface mining", "strip mining", "mountaintop removal", "subsurface mining", "acid mine drainage", "tailings", "overburden", "ore", "reclamation"],
+          kw: ["mining", "surface mining", "strip mining", "mountaintop removal", "subsurface mining", "acid mine drainage", "tailings", "overburden", "ore", "reclamation", "iron ore"],
           concepts: [
             "Surface (strip, open-pit, mountaintop removal) vs. subsurface mining",
             "Acid mine drainage: sulfides react with water/oxygen, lowering pH and mobilizing metals",
@@ -340,7 +343,7 @@
         },
         {
           id: "5.10", name: "Impacts of Urbanization", w: 3,
-          kw: ["urbanization", "urban sprawl", "impervious surface", "urban heat island", "saltwater intrusion", "suburb", "city"],
+          kw: ["urbanization", "urban sprawl", "impervious surface", "urban heat island", "saltwater intrusion", "suburb", "city", "food desert"],
           concepts: [
             "Impervious surfaces increase runoff and flooding, decrease groundwater recharge",
             "Urban heat island effect",

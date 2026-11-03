@@ -23,6 +23,11 @@ tells you what to study and where to study it.
    Titles alone can't show what's inside a question, so pasting the full question text
    gives a better prediction.
 4. Set **FRQs on the test**, **She mostly uses FRQs from** and **Teacher style**:
+   - **Her unit also covers:** tick extra CED units when her unit spans more than one
+     (for example, her Unit 4 covers CED Units 4 and 5). The app suggests this when many
+     pasted FRQs belong to another unit.
+   - **Labs or activities you did in class:** for example "soil lab, solar radiation
+     activity". Those topics get a boost, and design FRQs prefer them.
    - The year setting defaults to 2020–2025. FRQs from those years count 3× and
      older ones count less. FRQs without a year count normally.
    - Slide right if Mrs. Davis tends to reuse the same topics or questions.

@@ -409,7 +409,7 @@
         },
         {
           id: "8.15", name: "Pathogens and Infectious Diseases", w: 3,
-          kw: ["pathogen", "infectious disease", "malaria", "cholera", "tuberculosis", "west nile", "zika", "vector", "plague", "sars", "mers", "covid"],
+          kw: ["pathogen", "infectious disease", "malaria", "cholera", "tuberculosis", "west nile", "zika", "vector", "plague", "sars", "mers", "covid", "disease"],
           concepts: [
             "Pathogens: bacteria, viruses, parasites; vectors (mosquitoes) spread disease",
             "Climate change expands vector ranges (malaria, dengue, West Nile, Zika)",

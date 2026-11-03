@@ -8,7 +8,7 @@
 
   const $ = id => document.getElementById(id);
   const els = {
-    unit: $("unit"), numFRQs: $("numFRQs"), years: $("years"), reuse: $("reuse"), reuseLabel: $("reuseLabel"),
+    unit: $("unit"), numFRQs: $("numFRQs"), years: $("years"), alsoUnits: $("alsoUnits"), labs: $("labs"), reuse: $("reuse"), reuseLabel: $("reuseLabel"),
     input: $("frqInput"), stats: $("inputStats"), status: $("status"), results: $("results"),
     summary: $("summary")
   };
@@ -39,14 +39,35 @@
     els.unit.appendChild(o);
   }
 
+  for (const u of engine.units) {
+    const label = document.createElement("label");
+    label.title = "Unit " + u.id + ": " + u.name;
+    label.innerHTML = "<input type='checkbox' id='also-" + u.id + "' value='" + u.id + "'> " + u.id;
+    els.alsoUnits.appendChild(label);
+  }
+  const alsoBoxes = () => [...els.alsoUnits.querySelectorAll("input")];
+  function syncAlsoUnits() {
+    // The main unit is always included, so hide its own checkbox.
+    for (const box of alsoBoxes()) {
+      const isMain = box.value === els.unit.value;
+      box.parentElement.hidden = isMain;
+      if (isMain) box.checked = false;
+    }
+  }
+  const selectedAlso = () => alsoBoxes().filter(b => b.checked && b.value !== els.unit.value).map(b => Number(b.value));
+
   const prefs = readJSON(PREFS_KEY, {});
   if (prefs.unit) els.unit.value = prefs.unit;
   if (prefs.numFRQs) els.numFRQs.value = prefs.numFRQs;
   if (prefs.reuse != null) els.reuse.value = prefs.reuse;
   if (prefs.years != null) els.years.value = prefs.years;
+  if (Array.isArray(prefs.alsoUnits)) for (const b of alsoBoxes()) b.checked = prefs.alsoUnits.includes(Number(b.value));
+  if (prefs.labs) els.labs.value = prefs.labs;
+  syncAlsoUnits();
 
   function savePrefs() {
-    writeJSON(PREFS_KEY, { unit: els.unit.value, numFRQs: els.numFRQs.value, reuse: els.reuse.value, years: els.years.value });
+    writeJSON(PREFS_KEY, { unit: els.unit.value, numFRQs: els.numFRQs.value, reuse: els.reuse.value, years: els.years.value,
+      alsoUnits: selectedAlso(), labs: els.labs.value });
   }
 
   function updateReuseLabel() {
@@ -86,8 +107,16 @@
         (r.style.starredN ? ", " + r.style.starredN + " starred (***) FRQ" + (r.style.starredN === 1 ? "" : "s") + " counted double" : "") + ".";
     }
     let off = "";
+    const offCounts = {};
+    for (const o of r.offUnit) offCounts[o.unitId] = (offCounts[o.unitId] || 0) + 1;
+    const suggest = Object.keys(offCounts).filter(id => offCounts[id] >= 3 && offCounts[id] >= r.frqs.length / 4);
+    if (suggest.length) {
+      off += "<p class='hint'><b>Tip:</b> " + suggest.map(id => offCounts[id] + " of your FRQs look like Unit " + id).join(" and ") +
+        ". If her unit covers " + (suggest.length === 1 ? "that unit" : "those units") + " too, tick " +
+        suggest.map(id => "<b>" + id + "</b>").join(" and ") + " under \"Her unit also covers.\"</p>";
+    }
     if (r.offUnit.length) {
-      off = "<p class='hint'>Heads up: FRQ " + r.offUnit.map(o => "#" + o.index + " (looks like Unit " + o.unitId + ")").join(", ") +
+      off += "<p class='hint'>Heads up: FRQ " + r.offUnit.map(o => "#" + o.index + " (looks like Unit " + o.unitId + ")").join(", ") +
         " mostly match a different unit. Cross-unit topics still count, and every FRQ teaches the engine her style.</p>";
     }
     els.summary.innerHTML =
@@ -238,7 +267,9 @@
       unitId: Number(els.unit.value),
       numFRQs: Number(els.numFRQs.value),
       reuse: Number(els.reuse.value) / 100,
-      years: parseYears(els.years.value)
+      years: parseYears(els.years.value),
+      alsoUnits: selectedAlso(),
+      labs: els.labs.value
     });
     renderSummary(r);
     renderPredicted(r);
@@ -355,10 +386,12 @@
 
   els.reuse.addEventListener("input", updateReuseLabel);
   els.input.addEventListener("input", updateStats);
-  els.unit.addEventListener("change", () => { savePrefs(); if (!els.results.hidden) runPrediction(); });
+  els.unit.addEventListener("change", () => { syncAlsoUnits(); savePrefs(); if (!els.results.hidden) runPrediction(); });
   els.numFRQs.addEventListener("change", () => { savePrefs(); if (!els.results.hidden) runPrediction(); });
   els.reuse.addEventListener("change", () => { savePrefs(); if (!els.results.hidden) runPrediction(); });
   els.years.addEventListener("change", () => { savePrefs(); if (!els.results.hidden) runPrediction(); });
+  els.alsoUnits.addEventListener("change", () => { savePrefs(); if (!els.results.hidden) runPrediction(); });
+  els.labs.addEventListener("change", () => { savePrefs(); if (!els.results.hidden) runPrediction(); });
   document.querySelectorAll(".tabs button").forEach(b => b.addEventListener("click", () => showTab(b.dataset.tab)));
   els.input.addEventListener("keydown", e => { if ((e.ctrlKey || e.metaKey) && e.key === "Enter") runPrediction(); });
 
