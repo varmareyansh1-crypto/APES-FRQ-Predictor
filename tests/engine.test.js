@@ -187,3 +187,23 @@ test("combined units, labs, and short citation lines", () => {
   assert.strictEqual(design.parts.filter(p => /^design\b/i.test(p.text)).length, 1, "only one design part");
   assert.ok(r.topics.find(t => t.topic.id === "4.7").reasons.some(x => x.includes("lab")));
 });
+
+test("cumulative tests and FRQs marked ON TEST", () => {
+  const list = [
+    "1. 2021 Set 2 # 1 Soil Erosion Experimental Design",
+    "2. 2016 #4 Soil",
+    "3. ON TEST: Age structure diagrams Country X Y Z",
+    "4. ON TEST: 2014 #3 Plate Tectonics"
+  ].join("\n");
+  const off = engine.predict(list, { unitId: 4, numFRQs: 2, years: { from: 2020, to: 2025 } });
+  const on = engine.predict(list, { unitId: 4, numFRQs: 2, years: { from: 2020, to: 2025 }, review: true });
+  assert.deepStrictEqual(on.onTest.map(f => f.index), [3, 4]);
+  assert.strictEqual(on.frqs[3].year, 2014, "year still read after the ON TEST marker");
+  assert.ok(!off.topics.some(t => t.reviewUnit), "no review topics unless asked");
+  assert.deepStrictEqual(on.reviewUnits, [1, 2, 3]);
+  const core = on.predicted.filter(p => p.isCore);
+  assert.ok(core.some(p => p.anchor.reviewUnit), "one core FRQ is a review question");
+  assert.ok(on.topics.find(t => t.topic.id === "3.6").reasons.some(x => x.includes("actual tests")));
+  const p41 = r => r.topics.find(t => t.topic.id === "4.1").probability;
+  assert.ok(p41(on) > 0 && on.topics.find(t => t.topic.id === "4.1").reasons.some(x => x.includes("actual tests")));
+});

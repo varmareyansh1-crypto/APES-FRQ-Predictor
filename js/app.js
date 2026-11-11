@@ -8,7 +8,7 @@
 
   const $ = id => document.getElementById(id);
   const els = {
-    unit: $("unit"), numFRQs: $("numFRQs"), years: $("years"), alsoUnits: $("alsoUnits"), labs: $("labs"), reuse: $("reuse"), reuseLabel: $("reuseLabel"),
+    unit: $("unit"), numFRQs: $("numFRQs"), years: $("years"), alsoUnits: $("alsoUnits"), labs: $("labs"), review: $("review"), reuse: $("reuse"), reuseLabel: $("reuseLabel"),
     input: $("frqInput"), stats: $("inputStats"), status: $("status"), results: $("results"),
     summary: $("summary")
   };
@@ -63,11 +63,12 @@
   if (prefs.years != null) els.years.value = prefs.years;
   if (Array.isArray(prefs.alsoUnits)) for (const b of alsoBoxes()) b.checked = prefs.alsoUnits.includes(Number(b.value));
   if (prefs.labs) els.labs.value = prefs.labs;
+  if (prefs.review != null) els.review.checked = prefs.review;
   syncAlsoUnits();
 
   function savePrefs() {
     writeJSON(PREFS_KEY, { unit: els.unit.value, numFRQs: els.numFRQs.value, reuse: els.reuse.value, years: els.years.value,
-      alsoUnits: selectedAlso(), labs: els.labs.value });
+      alsoUnits: selectedAlso(), labs: els.labs.value, review: els.review.checked });
   }
 
   function updateReuseLabel() {
@@ -123,7 +124,20 @@
       "<p><b>Unit " + r.unit.id + ": " + esc(r.unit.name) + "</b> — " + esc(r.unit.bigIdea) + "</p>" +
       "<p>Top topics to expect: " + top3 + ".</p>" +
       "<p>" + mathOutlookText(r.mathOutlook, r.numFRQs) + "</p>" +
-      "<p class='hint'>" + basis + "</p>" + yearsText(r) + off;
+      "<p class='hint'>" + basis + "</p>" + yearsText(r) + reviewText(r) + off;
+  }
+
+  function reviewText(r) {
+    let t = "";
+    if (r.reviewUnits.length) {
+      t += "<p class='hint'>Cumulative test: topics from Unit " + r.reviewUnits.join(", ") +
+        " can come back, and one predicted FRQ is a review question.</p>";
+    }
+    if (r.onTest.length) {
+      t += "<p class='hint'>" + r.onTest.length + " FRQ" + (r.onTest.length === 1 ? " was" : "s were") +
+        " marked ON TEST and count 4× more than practice-list picks.</p>";
+    }
+    return t;
   }
 
   function yearsText(r) {
@@ -166,7 +180,7 @@
         : "";
       return "<article class='frq" + (p.isCore ? "" : " backup") + "'>" +
         "<div class='frq-head'><div><h3>Predicted FRQ " + p.rank + ": " + esc(p.anchor.name) + "</h3>" +
-        "<p class='meta'>" + esc(p.typeLabel) + " · Topic " + esc(p.anchor.id) +
+        "<p class='meta'>" + (p.anchor.reviewUnit ? "<b>Review from Unit " + p.anchor.reviewUnit + "</b> · " : "") + esc(p.typeLabel) + " · Topic " + esc(p.anchor.id) +
         (p.partner ? " + " + esc(p.partner.id) + " " + esc(p.partner.name) : "") + "</p></div>" +
         "<div class='pills'>" + mathPill(p.math) + (p.graphing ? "<span class='pill should'>Graphing</span>" : "") + "<span class='pill'>" + p.likelihood + "% likely</span></div></div>" +
         "<p class='scenario'>" + esc(p.scenario) + "</p><ol>" + parts + "</ol>" +
@@ -269,7 +283,8 @@
       reuse: Number(els.reuse.value) / 100,
       years: parseYears(els.years.value),
       alsoUnits: selectedAlso(),
-      labs: els.labs.value
+      labs: els.labs.value,
+      review: els.review.checked
     });
     renderSummary(r);
     renderPredicted(r);
@@ -392,6 +407,7 @@
   els.years.addEventListener("change", () => { savePrefs(); if (!els.results.hidden) runPrediction(); });
   els.alsoUnits.addEventListener("change", () => { savePrefs(); if (!els.results.hidden) runPrediction(); });
   els.labs.addEventListener("change", () => { savePrefs(); if (!els.results.hidden) runPrediction(); });
+  els.review.addEventListener("change", () => { savePrefs(); if (!els.results.hidden) runPrediction(); });
   document.querySelectorAll(".tabs button").forEach(b => b.addEventListener("click", () => showTab(b.dataset.tab)));
   els.input.addEventListener("keydown", e => { if ((e.ctrlKey || e.metaKey) && e.key === "Enter") runPrediction(); });
 

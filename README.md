@@ -22,10 +22,17 @@ tells you what to study and where to study it.
    APES exam Question 1 is always experimental design and Question 3 always has math.
    Titles alone can't show what's inside a question, so pasting the full question text
    gives a better prediction.
+   After a test, add what was actually on it with `ON TEST:` at the start of the line
+   (for example `ON TEST: 2014 #3 Plate Tectonics`). Those count 4× more than
+   practice-list picks, so the predictions follow what she really uses.
 4. Set **FRQs on the test**, **She mostly uses FRQs from** and **Teacher style**:
    - **Her unit also covers:** tick extra CED units when her unit spans more than one
      (for example, her Unit 4 covers CED Units 4 and 5). The app suggests this when many
      pasted FRQs belong to another unit.
+   - **Earlier units can appear (cumulative test):** on by default. Topics from earlier
+     units count at about half weight, and one predicted FRQ is saved for a review
+     question. Mrs. Davis's Unit 4 test included succession (Unit 2) and age structure
+     (Unit 3), which is why this exists.
    - **Labs or activities you did in class:** for example "soil lab, solar radiation
      activity". Those topics get a boost, and design FRQs prefer them.
    - The year setting defaults to 2020–2025. FRQs from those years count 3× and

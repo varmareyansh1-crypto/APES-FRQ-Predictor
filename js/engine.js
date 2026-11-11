@@ -22,6 +22,8 @@
 
   const VERBS = ["identify", "describe", "explain", "justify", "calculate", "propose", "compare", "predict", "design"];
 
+  const ON_TEST = /^\s*(?:\d{1,2}[.)]\s*)?\[?\s*on[\s-]*(?:the\s+)?test\s*\]?\s*[:\-–]?\s*/i;
+
   const GRAPH_WORDS = /\b(graph|graphs|graphing|graphed|plot|plotted|axes|axis)\b/i;
 
   // A part that needs math on the page.
@@ -235,7 +237,10 @@
         const unitScores = {};
         for (const h of hits) unitScores[h.unitId] = (unitScores[h.unitId] || 0) + h.score;
         const bestUnit = Object.keys(unitScores).sort((a, b) => unitScores[b] - unitScores[a])[0];
-        const cite = apesCitation(body);
+        // "ON TEST:" marks an FRQ that was on one of her real tests.
+        const onTest = ON_TEST.test(body);
+        const clean = body.replace(ON_TEST, "");
+        const cite = apesCitation(clean);
         const hasCalc = detectCalc(body) || Boolean(cite && cite.year >= 2020 && cite.question === 3);
         const firstLine = body.split("\n").find(l => l.trim()) || "";
         return {
@@ -249,7 +254,8 @@
           parts: countParts(body),
           hasCalc,
           hasGraph: GRAPH_WORDS.test(body),
-          year: citationYear(body),
+          year: citationYear(clean),
+          onTest,
           weight: 1,
           // Teachers mark must-do questions with *** (or more).
           starred: /\*{2,}/.test(body),
@@ -314,7 +320,12 @@
         topics: base.topics.concat(...extraUnits.map(u => u.topics)),
         ids: [...unitIds]
       } : Object.assign({ ids: [base.id] }, base);
-      const inUnit = id => unitIds.has(id);
+      // Cumulative tests: earlier units' topics can come back, at reduced weight.
+      const firstId = Math.min(...unitIds);
+      const reviewUnits = options.review ? kb.filter(u => u.id < firstId && !unitIds.has(u.id)) : [];
+      const reviewIds = new Set(reviewUnits.map(u => u.id));
+      const reviewTopics = [].concat(...reviewUnits.map(u => u.topics));
+      const inUnit = id => unitIds.has(id) || reviewIds.has(id);
 
       const numFRQs = clamp(Number(options.numFRQs) || 3, 1, 6);
       const reuse = options.reuse == null ? 0.6 : clamp(Number(options.reuse), 0, 1);
@@ -324,19 +335,22 @@
       for (const f of frqs) {
         if (!years || f.year == null) f.weight = 1;
         else f.weight = f.year >= years.from && f.year <= (years.to || 9999) ? 3 : 0.5;
+        // What she actually put on a test outweighs any practice list.
+        if (f.onTest) f.weight = Math.max(f.weight, 1) * 4;
       }
       const inYears = years ? frqs.filter(f => f.weight === 3) : [];
       const style = teacherStyle(frqs);
       const random = rng(hashString(String(text) + "|" + unit.id + "|" + numFRQs + "|" + reuse));
 
       // Which pasted FRQs relate to this unit?
-      const relevant = frqs.filter(f => unit.ids.some(id => f.unitScores[id] > 0));
+      const relevant = frqs.filter(f => [...unitIds, ...reviewIds].some(id => f.unitScores[id] > 0));
       const offUnit = frqs.filter(f => f.bestUnit && !inUnit(f.bestUnit));
 
       // Teacher signal per topic (only counting hits within this unit).
       const teacherRaw = {};
       const starredTopics = new Set();
       const recentTopics = new Set();
+      const onTestTopics = new Set();
       for (const f of frqs) {
         const unitHits = f.hits.filter(h => inUnit(h.unitId));
         const total = unitHits.reduce((s, h) => s + h.score, 0) || 1;
@@ -345,6 +359,7 @@
           teacherRaw[h.topicId] = (teacherRaw[h.topicId] || 0) + weight * h.score / total;
           if (f.starred) starredTopics.add(h.topicId);
           if (years && f.weight === 3) recentTopics.add(h.topicId);
+          if (f.onTest) onTestTopics.add(h.topicId);
         }
       }
       const teacherMax = Math.max(0, ...Object.values(teacherRaw));
@@ -374,20 +389,24 @@
       const designMax = Math.max(0, ...Object.values(designRaw));
 
       const wSum = unit.topics.reduce((s, t) => s + t.w, 0);
-      const wMax = Math.max(...unit.topics.map(t => t.w));
+      const wMax = Math.max(...unit.topics.concat(reviewTopics).map(t => t.w));
+      const reviewOf = new Map();
+      for (const u of reviewUnits) for (const t of u.topics) reviewOf.set(t.id, u.id);
 
       // Blend weights. With no teacher data, rely on the prior entirely.
       const W = hasTeacherData
         ? { prior: 0.40, teacher: 0.60 * reuse, gap: 0.60 * (1 - reuse) * 0.55 }
         : { prior: 1, teacher: 0, gap: 0 };
 
-      const scored = unit.topics.map(topic => {
+      const scored = unit.topics.concat(reviewTopics).map(topic => {
         const prior = (topic.w + (topic.calc ? 0.25 : 0)) / (wMax + 0.25);
         const teacher = hasTeacherData ? (teacherRaw[topic.id] || 0) / teacherMax : 0;
         const gap = hasTeacherData && !teacherRaw[topic.id] ? prior : 0;
         const lab = labMax ? (labRaw[topic.id] || 0) / labMax : 0;
         const designHit = designMax ? (designRaw[topic.id] || 0) / designMax : 0;
-        const score = W.prior * prior + W.teacher * teacher + W.gap * gap + 0.35 * lab;
+        const reviewUnit = reviewOf.get(topic.id) || null;
+        // Review topics count about half, unless her own FRQs point at them.
+        const score = (W.prior * prior + W.teacher * teacher + W.gap * gap + 0.35 * lab) * (reviewUnit ? 0.5 + 0.5 * teacher : 1);
         const reasons = [];
         if (topic.w >= 4) reasons.push("frequently tested on AP FRQs");
         else if (topic.w === 3) reasons.push("regularly tested on AP FRQs");
@@ -399,7 +418,9 @@
         if (gap && reuse < 0.5 && topic.w >= 3) reasons.push("core topic not yet tested — likely rotation pick");
         if (topic.calc) reasons.push("has a standard calculation (" + topic.calc + ")");
         if (designHit >= 0.5) reasons.push("matches her experimental design FRQs");
-        return { topic, prior, teacher, gap, lab, designHit, score, reasons };
+        if (onTestTopics.has(topic.id)) reasons.push("was on one of her actual tests");
+        if (reviewUnit) reasons.push("review from Unit " + reviewUnit + " (her tests are cumulative)");
+        return { topic, prior, teacher, gap, lab, designHit, score, reasons, reviewUnit };
       });
 
       // Convert to probability of appearing in at least one FRQ part.
@@ -413,7 +434,7 @@
       scored.sort((a, b) => b.score - a.score || b.topic.w - a.topic.w);
 
       const mathOutlook = buildMathOutlook(unit, scored, style, frqs, numFRQs);
-      const predicted = buildPredictedFRQs(unit, scored, style, frqs, numFRQs, options.extraCandidates == null ? 2 : options.extraCandidates, random);
+      const predicted = buildPredictedFRQs(unit, scored, style, frqs, numFRQs, options.extraCandidates == null ? 2 : options.extraCandidates, random, reviewUnits.length > 0);
       const studyPlan = buildStudyPlan(unit, scored, style, crossRaw);
 
       return {
@@ -430,6 +451,8 @@
         studyPlan,
         sources: buildSources(unit, scored),
         mathOutlook,
+        reviewUnits: reviewUnits.map(u => u.id),
+        onTest: frqs.filter(f => f.onTest).map(f => ({ index: f.index, title: f.title })),
         years,
         inYears: inYears.map(f => ({ index: f.index, year: f.year, title: f.title })),
         tips: buildTips(style)
@@ -470,8 +493,9 @@
         ". Identify the hypothesis, the independent variable, the dependent variable, a control, and one variable that should be held constant.";
     }
 
-    function buildPredictedFRQs(unit, scored, style, frqs, numFRQs, extra, random) {
+    function buildPredictedFRQs(unit, scored, style, frqs, numFRQs, extra, random, review) {
       const total = numFRQs + extra;
+      const scopeTopics = scored.map(x => x.topic);
       const anchors = scored.slice(0, total);
 
       // Mirror the teacher's mix of FRQ types; default to the AP exam pattern.
@@ -499,6 +523,18 @@
         let r = 0, d = 0;
         for (let i = 0; i < anchors.length; i++) {
           anchors[i] = typeOrder[i] === "design" && designPicks[d] ? designPicks[d++] : rest[r++];
+        }
+      }
+
+      // On a cumulative test, save one core FRQ for an earlier unit.
+      if (review && numFRQs >= 2 && !anchors.slice(0, numFRQs).some(a => a.reviewUnit)) {
+        const best = scored.find(s => s.reviewUnit && !anchors.includes(s));
+        let slot = -1;
+        for (let i = numFRQs - 1; i >= 0; i--) if (typeOrder[i] !== "design") { slot = i; break; }
+        if (best && slot >= 0) {
+          anchors.splice(numFRQs, 0, anchors[slot]);
+          anchors.length = total;
+          anchors[slot] = best;
         }
       }
 
@@ -557,7 +593,7 @@
         for (let k = 0; k < parts.length; k++) {
           const current = parts[k];
           if (!/^using your answer/i.test(current.text)) continue;
-          const owner = unit.topics.find(t => t.parts.includes(current.text));
+          const owner = scopeTopics.find(t => t.parts.includes(current.text));
           const before = owner && owner.parts[owner.parts.indexOf(current.text) - 1];
           if (!before || (parts[k - 1] && parts[k - 1].text === before)) continue;
           const at = parts.findIndex(p => p.text === before);
@@ -591,7 +627,7 @@
         const mathParts = parts.filter(p => MATH_PART.test(p.text));
         const mathKinds = [];
         for (const mp of mathParts) {
-          const owner = unit.topics.find(t => t.parts.includes(mp.text));
+          const owner = scopeTopics.find(t => t.parts.includes(mp.text));
           if (owner && owner.calc && !mathKinds.includes(owner.calc)) mathKinds.push(owner.calc);
         }
         return {
@@ -599,7 +635,7 @@
           isCore: i < numFRQs,
           type,
           typeLabel: FRQ_TYPES[type],
-          anchor: { id: anchor.topic.id, name: anchor.topic.name },
+          anchor: { id: anchor.topic.id, name: anchor.topic.name, reviewUnit: anchor.reviewUnit },
           partner: partner ? { id: partner.topic.id, name: partner.topic.name } : null,
           scenario: anchor.topic.scenario,
           parts: parts.map((p, j) => ({ letter: letters[j], text: p.text, context: p.context })),
